@@ -17,6 +17,11 @@ const routes = [
         component: () => import( '../views/3dtiles/loadModel.vue')
       },
       {
+        path: '/NewYorkModel',
+        name: 'NewYorkModel',
+        component: () => import( '../views/3dtiles/NewYorkModel.vue')
+      },
+      {
         path: '/bloom',
         name: 'bloom',
         component: () => import( '../views/postProcess/bloom.vue')
@@ -95,6 +100,11 @@ const routes = [
         path: '/globeInner',
         name: 'globeInner',
         component: () => import( '../views/globe/globeInner.vue')
+      },
+      {
+        path: '/alphaBg',
+        name: 'alphaBg',
+        component: () => import( '../views/globe/alphaBg.vue')
       },
       {
         path: '/syncView',

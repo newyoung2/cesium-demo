@@ -3,6 +3,8 @@ const menu = [
     title: "3dtiles",
     children: [
       { name: "加载3dtiles模型(模型旋转、高度调整)", value: "load3DTiles" },
+      { name: '加载上海城市建筑群模型', value: 'goSH' },
+      { name: '纽约城市模型', value: 'NewYorkModel' }
     ],
   },
   {
@@ -14,6 +16,7 @@ const menu = [
     children: [{ name: '限制地图显示范围', value: 'limitRange' },
     { name: '修改地球颜色为纯色', value: 'globeColor' },
     { name: '同步3d、2d地球视角', value: 'syncView' },
+    { name: '地球背景透明并修改背景图', value: 'alphaBg' },
     { name: '地球海洋透明度、地心', value: 'globeInner' },],
   },
   {
@@ -46,7 +49,7 @@ const menu = [
       { name: '画线', value: 'drawLine' },
       { name: '在几何体上播放视频', value: 'video' },
       { name: 'topoJson', value: 'topoJson' },    
-      { name: '加载上海城市建筑群模型', value: 'goSH' }]
+      ]
   },
 ]
 
