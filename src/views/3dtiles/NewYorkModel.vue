@@ -6,12 +6,18 @@
 import * as Cesium from "cesium/Cesium";
 import widget from "cesium/Widgets/widgets.css";
 var viewer = null;
+var handler;
 var kmlOptions;
 var geocachePromise;
 var geojsonOptions;
 var neighborhoodsPromise;
-var dronePromise 
-var drone
+var dronePromise;
+var drone;
+var city;
+var stage;
+var previousPickedEntity = undefined;
+var previousPickedColor = undefined;
+var highlighted
 export default {
   name: "goSH",
   props: {},
@@ -31,24 +37,27 @@ export default {
     init() {
       //使用ion数据   需要先申请token
       Cesium.Ion.defaultAccessToken =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZjFjYmZmNS1hYmNjLTRhZWUtYjlkNi02ODVmOGRjNGQ2N2MiLCJpZCI6Mzg4MzUsImlhdCI6MTYwNjg3Mzk0MX0.R0iO5eELEnpRqQCzoa33UZakcsTYUidaTP9nLa342wY";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmMjY1MzY3MC1mYWIwLTQ2ZDItYTdlZi0yNWEyZjU2MjAzOTQiLCJpZCI6Mzg4MzUsImlhdCI6MTYwNjg3MzkxNX0.gGDAumUmOxcrCTMRfrKZJjfZpYiLxGwJwSLlkDYt9BY";
       viewer = new Cesium.Viewer("cesiumContainer1", {
-          shouldAnimate: true,
+        shouldAnimate: true,
       });
       viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
       // 设置时钟和时间线
-// viewer.clock.shouldAnimate = true; // 当viewer开启后，启动动画
-// viewer.clock.startTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
-// viewer.clock.stopTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:20:00Z");
-// viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
-// viewer.clock.multiplier = 2; // 设置加速倍率
-// viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER; // tick computation mode(还没理解具体含义)
-// viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // 循环播放
-// viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime); // 设置时间的可见范围
+      // viewer.clock.shouldAnimate = true; // 当viewer开启后，启动动画
+      // viewer.clock.startTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
+      // viewer.clock.stopTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:20:00Z");
+      // viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
+      // viewer.clock.multiplier = 2; // 设置加速倍率
+      // viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER; // tick computation mode(还没理解具体含义)
+      // viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // 循环播放
+      // viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime); // 设置时间的可见范围
       this.addCityModel();
       this.addCityPolygon();
-      this.addPlaneModel()
+      this.addPlaneModel();
+      this.add3DTiles();
+      
     },
+    /*  */
     addCityModel() {
       /* 对于KmlDataSource，camera 和 canvas 选项必须要配置 */
       kmlOptions = {
@@ -119,7 +128,7 @@ export default {
         "Source/SampleData/sampleNeighborhoods.geojson",
         geojsonOptions
       );
-      viewer.zoomTo(neighborhoodsPromise)
+      // viewer.zoomTo(neighborhoodsPromise);
       var neighborhoods;
       neighborhoodsPromise.then(function (dataSource) {
         console.log(dataSource);
@@ -176,19 +185,18 @@ export default {
     },
     //添加无人机模型
     addPlaneModel() {
-        
-       dronePromise = Cesium.CzmlDataSource.load(
+      dronePromise = Cesium.CzmlDataSource.load(
         "Source/SampleData/sampleFlight.czml"
       );
-      
-    //   viewer.zoomTo(dronePromise)
+
+      //   viewer.zoomTo(dronePromise)
       dronePromise.then(function (dataSource) {
         viewer.dataSources.add(dataSource);
         // 使用id获取在CZML 数据中定义的无人机entity
         drone = dataSource.entities.getById("Aircraft/Aircraft1");
         // 附加一些三维模型
         drone.model = {
-          uri: "SampleData/models/CesiumAir/Cesium_Air.glb",
+          uri: "Source/SampleData/Models/CesiumDrone.gltf",
           minimumPixelSize: 128,
           maximumScale: 1000,
           silhouetteColor: Cesium.Color.WHITE,
@@ -207,6 +215,86 @@ export default {
         // viewer.trackedEntity = drone;
       });
     },
+    /* 添加城市高楼建筑模型 */
+    add3DTiles() {
+      // this.addPostProcess()
+      /* 添加城市建筑模型   并且制定医院和学校的颜色 */
+      city = viewer.scene.primitives.add(
+        Cesium.createOsmBuildings({
+          style: new Cesium.Cesium3DTileStyle({
+            color : "color('white')",
+            show : true
+          }),
+        })
+      );
+
+      /* 将视角定位到建筑模型附近 */
+      viewer.scene.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(-73.98179, 40.75802, 1750),
+        orientation: {
+          heading: Cesium.Math.toRadians(20),
+          pitch: Cesium.Math.toRadians(-20),
+        },
+      });
+
+      /* 给模型建筑添加交互   鼠标悬停在建筑上的时候高亮显示 */
+      highlighted = {
+          feature: undefined,
+          originalColor: new Cesium.Color(),
+      };
+      handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+      handler.setInputAction(function (movement) {
+        var pickedPrimitive = viewer.scene.pick(movement.endPosition);
+
+        var pickedEntity =
+          pickedPrimitive && pickedPrimitive.color
+            ? pickedPrimitive
+            : undefined;
+        // 取消上一个高亮对象的高亮效果
+       // If a feature was previously highlighted, undo the highlight
+       if (Cesium.defined(highlighted.feature)) {
+          highlighted.feature.color = highlighted.originalColor;
+          highlighted.feature = undefined;
+       }
+
+
+        // Highlight the currently picked entity
+        if (Cesium.defined(pickedEntity)) {
+          // Highlight the feature
+          highlighted.feature = pickedEntity;
+          Cesium.Color.clone(pickedEntity.color, highlighted.originalColor);
+          pickedEntity.color = Cesium.Color.YELLOW.withAlpha(1);
+        } 
+      }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+    },
+    /* 添加后期渲染效果   当鼠标悬停在建筑物上面的时候   高亮显示当前建筑物 */
+    addPostProcess(){
+      // Shade selected model with highlight.
+      var fragmentShaderSource =
+        "uniform sampler2D colorTexture;\n" +
+        "varying vec2 v_textureCoordinates;\n" +
+        "uniform vec4 highlight;\n" +
+        "void main() {\n" +
+        "    vec4 color = texture2D(colorTexture, v_textureCoordinates);\n" +
+        "    if (czm_selected()) {\n" +
+        "        vec3 highlighted = highlight.a * highlight.rgb + (1.0 - highlight.a) * color.rgb;\n" +
+        "        gl_FragColor = vec4(highlighted, 1.0);\n" +
+        "    } else { \n" +
+        "        gl_FragColor = color;\n" +
+        "    }\n" +
+        "}\n";
+      stage = viewer.scene.postProcessStages.add(
+        new Cesium.PostProcessStage({
+          fragmentShader: fragmentShaderSource,
+          uniforms: {
+            highlight: function () {
+              return new Cesium.Color(1.0, 0.0, 0.0, 0.5);
+            },
+          },
+        })
+      );
+      stage.selected = [];
+    }
   },
 };
 </script>
