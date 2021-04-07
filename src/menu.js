@@ -47,8 +47,22 @@ const menu = [
       { name: 'clampToModel', value: 'clampToModel' },   
       { name: '点击模型变色、切割模型', value: 'model' },
       { name: '画线', value: 'drawLine' },
+      { name: '画面', value: 'drawArea' },
       { name: '在几何体上播放视频', value: 'video' },
       { name: 'topoJson', value: 'topoJson' },    
+      ]
+  },
+  {
+    title: "实战与应用", children: [    
+      { name: '测量空间直线距离', value: 'mls' },
+      { name: '测量空间面积', value: 'mas' },   
+      { name: '与echarts结合（迁徙图）', value: 'combineecharts'}, 
+      { name: '与three.js结合', value: 'combinethree'}, 
+      { name: '发光建筑物(特效)', value: 'wisdomcity'}, 
+      { name: '雷达扫描线(特效)', value: 'dynamicRadar'},  
+      { name: '能量罩(特效)', value: 'electBox'}, 
+      { name: '扩散墙(特效)', value: 'spreadWall'},
+      { name: '扩散圆(特效)', value: 'scatterCircle'},
       ]
   },
 ]

@@ -10,7 +10,9 @@
     "@types/cesium": "^1.67.13",
     "cesium": "^1.75.0",
     "core-js": "^3.6.5",
+    "echarts": "^4.9.0",
     "element-ui": "^2.15.0",
+    "three": "^0.125.2",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
     "vuex": "^3.4.0"

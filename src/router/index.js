@@ -32,6 +32,16 @@ const routes = [
         component: () => import( '../views/other/flyView.vue')
       },
       {
+        path: '/mls',
+        name: 'mls',
+        component: () => import( '../views/other/measureLineSpace.vue')
+      },
+      {
+        path: '/mas',
+        name: 'mas',
+        component: () => import( '../views/other/measureAreaSpace.vue')
+      },
+      {
         path: '/globeColor',
         name: 'globeColor',
         component: () => import( '../views/other/globeColor.vue')
@@ -70,6 +80,21 @@ const routes = [
         path: '/drawLine',
         name: 'drawLine',
         component: () => import( '../views/other/drawLine1.vue')
+      },
+      {
+        path: '/combineecharts',
+        name: 'combineecharts',
+        component: () => import( '../views/other/combineEcharts.vue')
+      },
+      {
+        path: '/combinethree',
+        name: 'combinethree',
+        component: () => import( '../views/other/combineThree.vue')
+      },
+      {
+        path: '/drawArea',
+        name: 'drawArea',
+        component: () => import( '../views/other/drawArea.vue')
       },
       {
         path: '/topoJson',
@@ -130,6 +155,31 @@ const routes = [
         path: '/rain',
         name: 'rain',
         component: () => import( '../views/particle/rain.vue')
+      },
+      {
+        path: '/wisdomcity',
+        name: 'wisdomcity',
+        component: () => import( '../views/wisdomCity/wisdomCity.vue')
+      },
+      {
+        path: '/dynamicRadar',
+        name: 'dynamicRadar',
+        component: () => import( '../views/wisdomCity/dynamicRadar.vue')
+      },
+      {
+        path: '/electBox',
+        name: 'electBox',
+        component: () => import( '../views/wisdomCity/electBox.vue')
+      },
+      {
+        path: '/spreadWall',
+        name: 'spreadWall',
+        component: () => import( '../views/wisdomCity/spreadWall.vue')
+      },
+      {
+        path: '/scatterCircle',
+        name: 'scatterCircle',
+        component: () => import( '../views/wisdomCity/scatterCircle.vue')
       },
     ]
   }

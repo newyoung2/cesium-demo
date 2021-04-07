@@ -1,12 +1,17 @@
 <template>
-  <div id="cesiumContainer"></div>
+  <div id="cesiumContainer">
+    <el-button type="primary" size="mini" @click.stop="clear" style="position:absolute;right:8vh;top:2vh;z-index:100;">清除</el-button>
+  </div>
 </template>
 
 <script>
 import * as Cesium from "cesium/Cesium";
 import widget from "cesium/Widgets/widgets.css";
+import util from '../../util/cesiumUtil'
 var viewer = null;
 var tileset = null;
+var handler = null
+let res
 export default {
   name:"load3DTiles",
   props: {},
@@ -25,6 +30,8 @@ export default {
   methods: {
     init() {
       let viewerOption = {
+        infoBox: false,
+        selectionIndicator: false,
         geocoder: false, // 地理位置查询定位控件
         homeButton: false, // 默认相机位置控件
         timeline: false, // 时间滚动条控件
@@ -54,21 +61,35 @@ export default {
       //   }));
       viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
       this.add3DTiles();
+      res = util.measureAreaSpace(viewer,handler)
       // this.goSH()
+    },
+    clear(){
+        res.clear()
+       
     },
     //添加3dtiles格式模型数据
     add3DTiles() {
       let that = this;
       tileset = new Cesium.Cesium3DTileset({
         url: "test/Scene/Production_6.json",
+        // dynamicScreenSpaceError: true,
+        // skipLevels: 0,
+        // cullWithChildrenBounds: false,
+        maximumScreenSpaceError: 2,
+        maximumNumberOfLoadedTiles:1000,
       });
 
       viewer.scene.primitives.add(tileset);
       tileset.readyPromise.then(function (tileset) {
-        that.changeHeight(0);
-        //  that.changeRotate()
+
+         var boundingSphere = tileset.boundingSphere;
+        var cartographic = Cesium.Cartographic.fromCartesian(boundingSphere.center);
+        var surface = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, cartographic.height);
+        var offset = Cesium.Cartesian3.fromRadians(Cesium.Math.toRadians(106.709183),Cesium.Math.toRadians(26.562819), -32.0);
+        var translation = Cesium.Cartesian3.subtract(offset, surface, new Cesium.Cartesian3());
+         tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
         viewer.zoomTo(tileset); //视角移动至模型位置
-        // viewer.trackedEntity = tileset;
       });
     },
     // 旋转模型角度

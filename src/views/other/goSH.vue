@@ -36,10 +36,10 @@ export default {
         //         url: "https://webst02.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}",
         //     }),
         // terrainProvider: Cesium.createWorldTerrain(),
-        // imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
-        //   url:
-        //     "http://cache1.arcgisonline.cn/arcgis/rest/services/ChinaOnlineStreetPurplishBlue/MapServer",
-        // }),
+        imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+          url:
+            "http://cache1.arcgisonline.cn/arcgis/rest/services/ChinaOnlineStreetPurplishBlue/MapServer",
+        }),
         terrainProvider: Cesium.createWorldTerrain(),
         //关闭图层选择器，不然还怎么指定呢
         //  baseLayerPicker : false
@@ -56,7 +56,6 @@ export default {
     },
     goSH() {
       viewer.scene.primitives.add(Cesium.createOsmBuildings());
-
       viewer.scene.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(121.506377, 31.245105, 750),
         orientation: {
