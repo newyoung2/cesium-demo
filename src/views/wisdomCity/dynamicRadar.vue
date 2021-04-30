@@ -77,7 +77,7 @@
                 var longitude = "121.41440447172941";
                 var latitude = "31.148724746744023";
                 // 雷达扫描中心（三维空间坐标）
-                var geographySpace = new Cesium.Cartographic(Cesium.Math.toRadians(longitude), Cesium.Math.toRadians(latitude), 0);
+                var geographySpace = new Cesium.Cartographic(Cesium.Math.toRadians(longitude), Cesium.Math.toRadians(latitude), 5000);
                 // 扫描颜色
                 var scanColor = new Cesium.Color(1.0, 0.0, 0.0, 1);
                 // 持续时间 毫秒
@@ -94,6 +94,7 @@
               duration 持续时间 毫秒【4000】
             */
             addRadarScanPostStage(cartographicCenter, radius, scanColor, duration) {
+                console.log(cartographicCenter)
                 /* // 彩色纹理
                 uniform sampler2D colorTexture;
                 // 深度纹理

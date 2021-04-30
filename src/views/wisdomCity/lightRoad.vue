@@ -28,66 +28,12 @@
   
     let s = 0;
     let p = 1;
-  
+    let texture
     export default {
       props: {},
       data() {
         return {
-          publicPath: process.env.BASE_URL,
-          shader1 : {
-          vs: ` varying vec2 vUv;
-                void main() {
-                  vUv = uv;
-                  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-                }`,
-          fs: `
-          varying vec2 vUv;
-          uniform float time;
-          vec3 hsb2rgb(const vec3 c) {
-            vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0, 4.0, 2.0), 6.0)-3.0)-1.0, 0.0, 1.0);
-            rgb = rgb*rgb*(3.0-2.0*rgb);
-            return c.z * mix( vec3(1.0), rgb, c.y);
-          }
-          void main() {
-              // Normalized pixel coordinates (from 0 to 1)
-            vec2 uv = vUv;
-            vec2 p = 2.0*uv.xy - vec2(1., 1.) ; // center what being drawn
-            float r = length(p) * 2.;
-            vec3 color = hsb2rgb(vec3(0.24, 0.7, 0.5));
-            float a = pow(r, 2.0);
-            float b = sin(r * 0.8 - 1.6);
-            float c = sin(r - 0.010);
-            float s = sin(a - time * 3.0 + b) * c;
-            color *= abs(1.0 / (s * 30.)) - 0.01;
-            gl_FragColor = vec4(color, .4);
-          }
-          `
-    },
-    shader2:{
-      vs:`
-		varying vec3 vPosition;
-		void main(){
-			vPosition=position;
-			gl_Position	= projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-		}
-	`,
-      fs:`
-		varying vec3 vPosition;
-		uniform vec3 u_color;
-		uniform float u_r;
-		uniform float u_ring;
-
-		void main(){
-			float pct=distance(vec2(vPosition.x,vPosition.y),vec2(0.0));
-			if(pct>u_r || pct<(u_r-u_ring)){
-				gl_FragColor = vec4(1.0,0.0,0.0,0);
-			}else{
-				float dis=(pct-(u_r-u_ring))/(u_r-u_ring);
-				gl_FragColor = vec4(u_color,dis);
-			}
-		}
-	`,
-    }
+          publicPath: process.env.BASE_URL
         };
       },
       mounted() {
@@ -117,7 +63,6 @@
             {
               url: 'http://mt1.google.cn/vt/lyrs=s&hl=zh-CN&x={x}&{x}&y={y}&z={z}&s=Gali'
             })
-          cesiumContainer = document.getElementById("cesiumContainer");
           cesium.viewer = new Cesium.Viewer("cesiumContainer", {
             infoBox: false,
             selectionIndicator: false,
@@ -198,12 +143,12 @@
   
           //Three.js Objects
           /* ---------------------------------------------------------------------------------------------------- */
-          var latheMesh = this.scatterCircle(1, 0.1, 0.3, new THREE.Vector3(0, 1, 1), 0.02)
-          latheMesh.scale.set(50000, 50000, 50000); //scale object to be visible at planet scale
+          var latheMesh = this.createMesh()
+          latheMesh.scale.set(1500, 1500, 1500); //scale object to be visible at planet scale
   
           latheMesh.position.z += 15.0; // translate "up" in Three.js space so the "bottom" of the mesh is the handle
   
-        //   latheMesh.rotation.x = Math.PI / 2; // rotate mesh for Cesium's Y-up system
+          latheMesh.rotation.x = Math.PI / 2; // rotate mesh for Cesium's Y-up system
   
           var latheMeshYup = new THREE.Group();
   
@@ -230,48 +175,57 @@
             this.maxWGS84 = null;
           }
         },
-        //r 圆半径
-//init 初始圆半径
-//ring 圆环大小
-//color 颜色 THREE.Vector3
-//speed 速度
-   scatterCircle(r, init, ring, color, speed) {
-	var uniform = {
-    time:{value:0},
-		u_color: { value: color },
-		u_r: { value: init },
-		u_ring: {
-			value: ring,
-		},
-	};
+        createMesh() {
+           texture = new THREE.TextureLoader().load(`${this.publicPath}texture/nanshan-road1.png`)
+          texture.wrapS = texture.wrapT = THREE.RepeatWrapping; //每个都重复
+          texture.repeat.set(1, 1)
+          texture.needsUpdate = true
+          texture.offset.x = 0.5
 
-	var vs = this.shader2.vs;
-	var fs = this.shader2.fs;
-	const geometry = new THREE.CircleGeometry(r, 12000);
-	var material = new THREE.ShaderMaterial({
-		vertexShader: vs,
-		fragmentShader: fs,
-		side: THREE.DoubleSide,
-		uniforms: uniform,
-		transparent: true,
-		depthWrite: false,
-	});
-	const circle = new THREE.Mesh(geometry, material);
 
-	function render() {
-    uniform.time.value  += 0.01;
-    console.log(uniform.time)
-		uniform.u_r.value += speed || 0.1;
-		if (uniform.u_r.value >= r) {
-			uniform.u_r.value = init;
-		}
-		requestAnimationFrame(render);
-	}
-	render();
+  let material = new THREE.MeshBasicMaterial({
+    map: texture,
+    side: THREE.BackSide,
+    transparent: true
+  })
 
-	return circle;
-},
-       
+  // 创建顶点数组
+  let points = [new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(10, 0, 0),
+    new THREE.Vector3(10, 0, 10),
+    new THREE.Vector3(0, 0, 10)
+  ]
+  // let points = [new THREE.Vector3(0, 0, 0),
+  //   new THREE.Vector3(0, 10, 0),
+  //   new THREE.Vector3(0, 20, 0),
+  //   new THREE.Vector3(0, 100, 0)
+  // ]
+
+  // CatmullRomCurve3创建一条平滑的三维样条曲线
+  let curve = new THREE.CatmullRomCurve3(points) // 曲线路径
+
+  // 创建管道
+  let tubeGeometry = new THREE.TubeGeometry(curve, 80, 0.1)
+  
+  let mesh = new THREE.Mesh(tubeGeometry, material);
+
+//   function render() {
+//     if(mesh.material.map)mesh.material.map.offset.x -= 0.01;
+// 		requestAnimationFrame(render);
+// 	}
+// 	render();
+
+          return mesh
+        },
+        getTexture() {
+          let that = this
+          return new Promise((resolve, reject) => {
+            new THREE.TextureLoader().load(`${that.publicPath}texture/nanshan-road1.png`, (texture) => {
+              resolve(texture)
+            }, undefined, undefined);
+          })
+  
+        },
         // 循环渲染
         loop() {
           requestAnimationFrame(this.loop);
@@ -332,23 +286,9 @@
   
             
             /* 扩散代码 */
-            // _3Dobjects[id].threeMesh.children[0].material.uniforms.time += 0.01
-    //         s += 0.01;
-    //         p -= 0.005;
-    //         if (s > 2) {
-    //           s = 0;
-    //           p = 1;
-    //         }
-    //         _3Dobjects[id].threeMesh.children[0].scale.set(800 + s * 2000, 1500, 800 + s * 2000);
-    //         _3Dobjects[id].threeMesh.children[0].material[0].opacity = p;
-    //         console.log(_3Dobjects[id].threeMesh.children[0].material.uniforms)
-    //         function render() {
-	// 	uniform.u_r.value += speed || 0.1;
-	// 	if (uniform.u_r.value >= r) {
-	// 		uniform.u_r.value = init;
-	// 	}
-	// 	requestAnimationFrame(render);
-	// }
+            // console.log(_3Dobjects[id].threeMesh)
+            _3Dobjects[id].threeMesh.children[0].material.map.offset.x -= 0.01;
+            // console.log(_3Dobjects[id].threeMesh.children[0].material.map.offset.x)
   
   
           })

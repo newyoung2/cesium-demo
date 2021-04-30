@@ -8,6 +8,7 @@
 
   import * as Cesium from "cesium/Cesium";
   import * as THREE from "THREE";
+  import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
   import widget from "cesium/Widgets/widgets.css";
   import "../../util/EchartsLayer";
   var minWGS84 = [115.23, 39.55];
@@ -28,11 +29,12 @@
 
   let s = 0;
   let p = 1;
-
+  let texture
   export default {
     props: {},
     data() {
       return {
+        loader: null,
         publicPath: process.env.BASE_URL
       };
     },
@@ -112,47 +114,48 @@
         ThreeContainer.appendChild(three.renderer.domElement);
       },
       // 初始化两个库里的3d对象
-      init3DObject() {
+      async init3DObject() {
         //Cesium entity
-
+        var position = Cesium.Cartesian3.fromDegrees(
+          115.23,
+          39.55,
+          0
+      );
+      var heading = Cesium.Math.toRadians(135);
+      var pitch = 0;
+      var roll = 0;
+      var hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+      var orientation = Cesium.Transforms.headingPitchRollQuaternion(
+        position,
+        hpr
+      );
         var entity = {
-
-          name: 'Polygon',
-
-          polygon: {
-
-            hierarchy: Cesium.Cartesian3.fromDegreesArray([
-
-              minWGS84[0], minWGS84[1],
-
-              maxWGS84[0], minWGS84[1],
-
-              maxWGS84[0], maxWGS84[1],
-
-              minWGS84[0], maxWGS84[1],
-
-            ]),
-
-            material: Cesium.Color.RED.withAlpha(0)
+          name: 'SampleData/models/CesiumAir/model2.gltf',
+          position: position,
+          orientation: orientation,
+          model: {
+          uri: 'SampleData/models/CesiumAir/model2.gltf',
+          minimumPixelSize:128,
+          maximumScale: 20000,
+        }
 
           }
 
-        };
 
         var Polygon = cesium.viewer.entities.add(entity);
 
         //Three.js Objects
         /* ---------------------------------------------------------------------------------------------------- */
-        var latheMesh = this.createMesh()
-        latheMesh.scale.set(1500, 1500, 1500); //scale object to be visible at planet scale
+          // var latheMesh = await this.createMesh()
+          // latheMesh.scale.set(1500, 1500, 1500); //scale object to be visible at planet scale
 
-        latheMesh.position.z += 15.0; // translate "up" in Three.js space so the "bottom" of the mesh is the handle
+          // latheMesh.position.z += 15.0; // translate "up" in Three.js space so the "bottom" of the mesh is the handle
 
-        latheMesh.rotation.x = Math.PI /2; // rotate mesh for Cesium's Y-up system
+          // latheMesh.rotation.x = Math.PI / 2; // rotate mesh for Cesium's Y-up system
 
         var latheMeshYup = new THREE.Group();
 
-        latheMeshYup.add(latheMesh)
+          // latheMeshYup.add(latheMesh)
 
         three.scene.add(latheMeshYup); // don’t forget to add it to the Three.js scene manually
 
@@ -176,38 +179,28 @@
         }
       },
       createMesh() {
-        let texture = new THREE.TextureLoader().load(`${this.publicPath}texture/2021010914430314.png`)
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping; //每个都重复
-        texture.repeat.set(1, 1)
-        texture.needsUpdate = true
-
-
-        let geometry = new THREE.CylinderGeometry(4, 4, 2, 64);
-        let materials = [
-          new THREE.MeshBasicMaterial({
-            map: texture,
-            side: THREE.DoubleSide,
-            transparent: true
-          }),
-          new THREE.MeshBasicMaterial({
-            transparent: true,
-            opacity: 0,
-            side: THREE.DoubleSide
-          }),
-          new THREE.MeshBasicMaterial({
-            transparent: true,
-            opacity: 0,
-            side: THREE.DoubleSide
-          })
-        ]
-        return new THREE.Mesh(geometry, materials)
-      },
-      getTexture() {
         let that = this
         return new Promise((resolve, reject) => {
-          new THREE.TextureLoader().load(`${that.publicPath}texture/2021010914430314.png`, (texture) => {
-            resolve(texture)
-          }, undefined, undefined);
+          that.loader = new GLTFLoader();
+          that.loader.load("SampleData/models/CesiumAir/model2.gltf", function (gltf) {
+           
+            const model = gltf.scene;
+            // model.scale.set(1500, 1500, 1500); //scale object to be visible at planet scale
+           
+            model.children = model.children.map(e=>{
+              e.position.z += 15.0; // translate "up" in Three.js space so the "bottom" of the mesh is the handle
+              e.rotation.x = Math.PI / 2; // rotate mesh for Cesium's Y-up system
+              return e 
+            })
+            console.log(model)
+            resolve(model)
+
+          }, undefined, function (e) {
+
+            console.error(e);
+
+          });
+
         })
 
       },
@@ -232,7 +225,7 @@
           return new THREE.Vector3(cart.x, cart.y, cart.z);
 
         };
-
+        //   console.log(_3Dobjects)
         // Configure Three.js meshes to stand against globe center position up direction
         _3Dobjects.forEach((item, id) => {
 
@@ -269,16 +262,11 @@
 
           _3Dobjects[id].threeMesh.up.copy(latDir);
 
-          
+
           /* 扩散代码 */
-          s += 0.01;
-          p -= 0.005;
-          if (s > 2) {
-            s = 0;
-            p = 1;
-          }
-          _3Dobjects[id].threeMesh.children[0].scale.set(800 + s * 2000, 1500, 800 + s * 2000);
-          _3Dobjects[id].threeMesh.children[0].material[0].opacity = p;
+          // console.log(_3Dobjects[id].threeMesh)
+          // _3Dobjects[id].threeMesh.children[0].material.map.offset.x -= 0.01;
+          // console.log(_3Dobjects[id].threeMesh.children[0].material.map.offset.x)
 
 
         })
@@ -381,16 +369,16 @@
   }
 
   /* .loadingIndicator {
-              display: block;
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              margin-top: -33px;
-              margin-left: -33px;
-              width: 66px;
-              height: 66px;
-              background-position: center;
-              background-repeat: no-repeat;
-              background-image: url(Images/ajax-loader.gif);
-          } */
+                display: block;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                margin-top: -33px;
+                margin-left: -33px;
+                width: 66px;
+                height: 66px;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-image: url(Images/ajax-loader.gif);
+            } */
 </style>

@@ -59,10 +59,15 @@ const menu = [
       { name: '与echarts结合（迁徙图）', value: 'combineecharts'}, 
       { name: '与three.js结合', value: 'combinethree'}, 
       { name: '发光建筑物(特效)', value: 'wisdomcity'}, 
-      { name: '雷达扫描线(特效)', value: 'dynamicRadar'},  
+      { name: '雷达扫描线', value: 'dynamicRadar'},  
       { name: '能量罩(特效)', value: 'electBox'}, 
       { name: '扩散墙(特效)', value: 'spreadWall'},
       { name: '扩散圆(特效)', value: 'scatterCircle'},
+      { name: '雷达(特效)', value: 'radar'},
+      { name: '道路流光(特效)', value: 'lightRoad'},
+      { name: '城市3d模型（基于three.js）', value: 'threeCityModel'},
+      { name: '浮动盒子', value: 'floatBox'},
+      { name: '智慧城市', value: 'indexCity'},
       ]
   },
 ]

@@ -51,10 +51,10 @@ export default {
       // viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER; // tick computation mode(还没理解具体含义)
       // viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // 循环播放
       // viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime); // 设置时间的可见范围
-      this.addCityModel();
-      this.addCityPolygon();
+      // this.addCityModel();
+      // this.addCityPolygon();
       this.addPlaneModel();
-      this.add3DTiles();
+      // this.add3DTiles();
       
     },
     /*  */
@@ -191,9 +191,12 @@ export default {
 
       //   viewer.zoomTo(dronePromise)
       dronePromise.then(function (dataSource) {
+        
         viewer.dataSources.add(dataSource);
         // 使用id获取在CZML 数据中定义的无人机entity
         drone = dataSource.entities.getById("Aircraft/Aircraft1");
+        console.log(drone)
+        // drone.position = new Cartesian3({x:-2851901.1585062477,y: 4653862.8234637035,z:3288760.922783564})
         // 附加一些三维模型
         drone.model = {
           uri: "Source/SampleData/Models/CesiumDrone.gltf",
@@ -212,7 +215,7 @@ export default {
           interpolationAlgorithm: Cesium.HermitePolynomialApproximation,
         });
 
-        // viewer.trackedEntity = drone;
+        viewer.trackedEntity = drone;
       });
     },
     /* 添加城市高楼建筑模型 */
@@ -245,7 +248,7 @@ export default {
       handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
       handler.setInputAction(function (movement) {
         var pickedPrimitive = viewer.scene.pick(movement.endPosition);
-
+       
         var pickedEntity =
           pickedPrimitive && pickedPrimitive.color
             ? pickedPrimitive
@@ -260,10 +263,12 @@ export default {
 
         // Highlight the currently picked entity
         if (Cesium.defined(pickedEntity)) {
+          console.log(pickedEntity)
           // Highlight the feature
-          highlighted.feature = pickedEntity;
-          Cesium.Color.clone(pickedEntity.color, highlighted.originalColor);
-          pickedEntity.color = Cesium.Color.YELLOW.withAlpha(1);
+          pickedEntity.color = Cesium.Color.fromRandom()
+          // highlighted.feature = pickedEntity;
+          // Cesium.Color.clone(pickedEntity.color, highlighted.originalColor);
+          // pickedEntity.color = Cesium.Color.YELLOW.withAlpha(1);
         } 
       }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
     },

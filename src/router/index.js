@@ -181,6 +181,31 @@ const routes = [
         name: 'scatterCircle',
         component: () => import( '../views/wisdomCity/scatterCircle.vue')
       },
+      {
+        path: '/radar',
+        name: 'radar',
+        component: () => import( '../views/wisdomCity/radar.vue')
+      },
+      {
+        path: '/lightRoad',
+        name: 'lightRoad',
+        component: () => import( '../views/wisdomCity/lightRoad.vue')
+      },
+      {
+        path: '/threeCityModel',
+        name: 'threeCityModel',
+        component: () => import( '../views/wisdomCity/threeCityModel.vue')
+      },
+      {
+        path: '/floatBox',
+        name: 'floatBox',
+        component: () => import( '../views/wisdomCity/floatBox.vue')
+      },
+      {
+        path: '/indexCity',
+        name: 'indexCity',
+        component: () => import( '../views/wisdomCity/indexCity.vue')
+      },
     ]
   }
 ]
