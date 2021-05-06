@@ -81,11 +81,27 @@
         viewer = new Cesium.Viewer("cesiumContainer", viewerOption);
         viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
 
+//       let item = viewer.entities.add({
+//      name: 'PolylineTrail',
+//       polygon: {
+//           hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights([
+//               50, 30, 250000,
+//               60 , 30, 250000,
+//               60 , 32, 250000,
+//               50, 32, 250000,
+//           ]),
+//           width: 15,
+//           material: new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.WHITE, 3000,1)
+//       }
+//  });
+
+//  viewer.zoomTo(item);
+
         // 添加primitive
-        ldCollection = new Cesium.PrimitiveCollection();
-        if(that.geojson && that.geojson.length > 0){
-          that.addLdPrimitive()
-        }
+        // ldCollection = new Cesium.PrimitiveCollection();
+        // if(that.geojson && that.geojson.length > 0){
+        //   that.addLdPrimitive()
+        // }
 
         // 加载3dtiles模型
         that.load3DTileModel() 

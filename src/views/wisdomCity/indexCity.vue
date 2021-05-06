@@ -33,9 +33,9 @@
         controls: null,
         electBoxObj: null,
         lightLineObj: null,
-        rectObj:null,
-        loadedGeometry:null,
-        personMeshObj:null,
+        rectObj: null,
+        loadedGeometry: null,
+        personMeshObj: null,
         publicPath: process.env.BASE_URL,
         shader2: {
           vs: `
@@ -114,13 +114,6 @@
       },
       // 初始化cesium
       initCesium() {
-        // let esri = new Cesium.ArcGisMapServerImageryProvider({
-        //   url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-        // });
-        // var googlemap = new Cesium.UrlTemplateImageryProvider(
-        //   {
-        //     url: 'http://mt1.google.cn/vt/lyrs=s&hl=zh-CN&x={x}&{x}&y={y}&z={z}&s=Gali'
-        //   })
         cesium.viewer = new Cesium.Viewer("cesiumContainer", {
           useDefaultRenderLoop: false,
           infoBox: false,
@@ -139,22 +132,22 @@
           }),
           baseLayerPicker: false,
         });
-        // let center = Cesium.Cartesian3.fromDegrees(
-        //   (minWGS84[0] + maxWGS84[0]) / 2,
-        //   ((minWGS84[1] + maxWGS84[1]) / 2) - 1,
-        //   200000
-        // );
-        // ce = center;
-        // cesium.viewer.camera.flyTo({
-        //   destination: center,
-        //   orientation: {
-        //     heading: Cesium.Math.toRadians(0),
-        //     pitch: Cesium.Math.toRadians(-60),
-        //     roll: Cesium.Math.toRadians(0)
-        //   },
-        //   duration: 3
-        // });
+
+        /* 抗锯齿 */
+        cesium.viewer.scene.fxaa = false
+        cesium.viewer.scene.postProcessStages.fxaa.enabled = false;
+
+        var supportsImageRenderingPixelated = cesium.viewer.cesiumWidget._supportsImageRenderingPixelated;
+        if (supportsImageRenderingPixelated) {
+          var vtxf_dpr = window.devicePixelRatio;
+          while (vtxf_dpr >= 2.0) { vtxf_dpr /= 2.0; }
+          cesium.viewer.resolutionScale = vtxf_dpr;
+        }
+
+        /* 开启深度检测 */
         cesium.viewer.scene.globe.depthTestAgainstTerrain = true;
+
+        /*  */
         cesium.viewer.scene.camera.flyTo({
           destination: new Cesium.Cartesian3(-2852038.506894064, 4656753.071879653, 3286786.358214652),
           orientation: {
@@ -183,24 +176,17 @@
       // 初始化两个库里的3d对象
       init3DObject() {
         //添加cesium对象
-      //  cesium.viewer.entities.add({
-      //     name: "Red box with black outline",
-      //     position: Cesium.Cartesian3.fromDegrees(121.49971003569267,31.239999873637704,1000),
-      //     model:{
-      //       uri:'SampleData/models/CesiumDrone/CesiumDrone.glb',
-      //       minimumPixelSize: 128,
-      //     maximumScale: 20000,
-      //     }
-      //   });
+        this.ODLine()
+        this.addWall()
         this.addBuildings()
-        
+        // this.codeLine()
 
         // 添加three对象
         this.electBoxObj = this.addElectBox()
         this.scatterCircle()
-        this.lightLineObj = this.lightLine()
+        // this.lightLineObj = this.lightLine()
         this.rectObj = this.addRectangular()
-        this.getSpireModel()
+        // this.getSpireModel()
       },
       // 循环渲染
       loop() {
@@ -230,26 +216,26 @@
         // this.controls.update();
         // 能量罩
         this.electBoxObj ? this.electBoxObj.material.uniforms.time.value += 0.01 : ''
-        
+
         // 线条
-        if(this.lightLineObj){
-          this.lightLineObj.children.forEach(e=>{
+        if (this.lightLineObj) {
+          this.lightLineObj.children.forEach(e => {
             e.material.map.offset.x -= 0.002
           })
         }
-        
+
         // 四棱锥;
-        if(this.rectObj){
-          this.rectObj.children.forEach(e=>{
+        if (this.rectObj) {
+          this.rectObj.children.forEach(e => {
             e.rotation.x += 0.04
             e.rotation.y += 0.04
             e.rotation.z += 0.04
           })
-          
+
         }
-        
-       
-        if(this.personMeshObj){
+
+
+        if (this.personMeshObj) {
           // this.personMeshObj.rotation.x += 0.04
           // console.log(this.personMeshObj.rotation.x)
           this.personMeshObj.rotation.y += 0.04
@@ -396,7 +382,7 @@
             });
 
 
-      
+
 
           })
           .otherwise(function (error) {
@@ -527,7 +513,7 @@
         return material;
       },
       // --设置three对象位置-----------------------------------------
-      setThreeObjPosition(param,height = 0) {
+      setThreeObjPosition(param, height = 0) {
         var cartToVec = function (cart) {
 
           return new THREE.Vector3(cart.x, cart.y, cart.z);
@@ -540,7 +526,7 @@
 
         // convert lat/long center position to Cartesian3
 
-        var center = Cesium.Cartesian3.fromDegrees((minWGS84[0] + maxWGS84[0]) / 2, (minWGS84[1] + maxWGS84[1]) / 2,height);
+        var center = Cesium.Cartesian3.fromDegrees((minWGS84[0] + maxWGS84[0]) / 2, (minWGS84[1] + maxWGS84[1]) / 2, height);
 
         // get forward direction for orienting model
 
@@ -615,6 +601,7 @@
 
         return circle;
       },
+      // OD线基于three
       lightLine() {
         let minWGS84 = [121.49971003569267, 31.239999873637704]
         var maxWGS84 = [121.49972003569267, 31.240009873637704];
@@ -633,26 +620,26 @@
 
         // 创建顶点数组
         let points = [
-                      [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 5, 5),new THREE.Vector3(0, 8, 0)],
-                      [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 6, 7),new THREE.Vector3(9, 0, 0)],
-                      [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -6, 7),new THREE.Vector3(5, -35, 0)],
-                      [new THREE.Vector3(0, 0, 0), new THREE.Vector3(-5, -1, 5),new THREE.Vector3(-10, -3, 0)]]
+          [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 5, 5), new THREE.Vector3(0, 8, 0)],
+          [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 6, 7), new THREE.Vector3(9, 0, 0)],
+          [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -6, 7), new THREE.Vector3(5, -35, 0)],
+          [new THREE.Vector3(0, 0, 0), new THREE.Vector3(-5, -1, 5), new THREE.Vector3(-10, -3, 0)]]
 
-        
+
         var group = new THREE.Group();
-        
-        points.forEach(e=>{
-            // CatmullRomCurve3创建一条平滑的三维样条曲线
-        let curve = new THREE.CatmullRomCurve3(e) // 曲线路径
 
-// 创建管道
-let tubeGeometry = new THREE.TubeGeometry(curve, 80, 0.1)
+        points.forEach(e => {
+          // CatmullRomCurve3创建一条平滑的三维样条曲线
+          let curve = new THREE.CatmullRomCurve3(e) // 曲线路径
 
-let mesh = new THREE.Mesh(tubeGeometry, material);
-mesh.scale.set(150, 150, 150)
-group.add(mesh)      
+          // 创建管道
+          let tubeGeometry = new THREE.TubeGeometry(curve, 80, 0.1)
+
+          let mesh = new THREE.Mesh(tubeGeometry, material);
+          mesh.scale.set(150, 150, 150)
+          group.add(mesh)
         })
-        
+
         three.scene.add(group);
         let res = {
           threeMesh: group,
@@ -663,136 +650,222 @@ group.add(mesh)
 
         return group
       },
-      addRectangular(){
+      // od线基于cesium
+      ODLine() {
+        let arr = [
+          [121.49872890304215, 31.23811931903695, 0, 121.49580735943334, 31.23691516337262, 700, 121.49013735991807, 31.232977794178908, 0],
+          [121.49872890304215, 31.23811931903695, 0, 121.49487614748442, 31.24249621923281, 1000, 121.48997152310628, 31.249634173869836, 0],
+          [121.49872890304215, 31.23811931903695, 0, 121.51801026944386, 31.257804203980925, 1100, 121.53994551468021, 31.27774008101418, 0],
+          [121.49872890304215, 31.23811931903695, 0, 121.50689406570945, 31.235675335659597, 900, 121.51360824805317, 31.2318641147962, 0],
+          [121.49872890304215, 31.23811931903695, 0, 121.52799172213003, 31.235268840934545, 800, 121.55710892258877, 31.227136256013686, 0],
+        ]
+
+        arr.forEach(e => {
+          /* 因为cesium polyline不支持插值计算    所以先通过HermiteSpline计算出插值点  再根据计算出的插值点绘制polyline   就可得到弯曲平滑的线段 */
+          let controls = Cesium.Cartesian3.fromDegreesArrayHeights(e);
+
+          var spline = Cesium.HermiteSpline.createNaturalCubic({
+            times: [0.0, 0.5, 1],
+            points: controls,
+          });
+
+          var positions = [];
+          // 分成500份  分数越多越平滑
+          for (let i = 0; i <= 500; i++) {
+            let cartesian3 = spline.evaluate(i / 500);
+            positions.push(cartesian3);
+          }
+          
+          /* 根据数据绘制od线 */
+          // let a = new Cesium.PolylineTrailLinkMaterialProperty(null, 3000)
+          // let Material = new Cesium.PolylineTrailLinkMaterialProperty(null, 3000)
+          // console.log(Material)
+          // Cesium.Material.PolylineTrailLinkImage = `${this.publicPath}texture/line.png`;
+          cesium.viewer.entities.add({
+            name: 'PolylineTrail',
+            polyline: {
+              positions: positions,
+              width: 8,
+              arcType: Cesium.ArcType.NONE,
+              material: new Cesium.PolylineTrailLinkMaterialProperty(null, 3000)
+            }
+          });
+        })
+
+       
+      },
+     
+      codeLine(){
+        let arr = [
+          [121.49013735991807, 31.232977794178908, 0,121.49013735991807, 31.232977794178908, 10000],
+          [121.48997152310628, 31.249634173869836, 0,121.48997152310628, 31.249634173869836, 10000],
+          [121.53994551468021, 31.27774008101418, 0,121.53994551468021, 31.27774008101418, 10000],
+          [121.51360824805317, 31.2318641147962, 0,121.51360824805317, 31.2318641147962, 10000],
+          [121.55710892258877, 31.227136256013686, 0,121.55710892258877, 31.227136256013686, 10000],
+        ]
+        let obj = null
+        arr.map(e=>{
+          let controls = Cesium.Cartesian3.fromDegreesArrayHeights(e);
+          obj = cesium.viewer.entities.add({
+            name: 'PolylineTrail1',
+            polyline: {
+              positions: controls,
+              width: 20,
+              material: new Cesium.PolylineTrailLinkMaterialProperty(null, 3000)
+            }
+          });
+        })
+        // obj.polyline.material.image = 'https://img1.baidu.com/it/u=897925879,2799566943&fm=26&fmt=auto&gp=0.jpg'
+        // console.log(obj)
+      },
+      addWall(){
+        let arr = [121.53415988151373,31.240442807182433, 200.0,
+        121.54519435235682,31.238860691269554, 200.0,
+        121.54158670353141,31.231993151255345, 200.0,
+        121.53134619657078,31.23454218401985,200.0,
+        121.53415988151373,31.240442807182433, 200.0]
+        // Cesium.Material.PolylineTrailLinkImage = `${this.publicPath}texture/line.png`;
+        let entity =  cesium.viewer.entities.add({
+                            name: 'WallTrail',
+                            wall: {
+                                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arr),
+                                material: new Cesium.PolylineTrailLinkMaterialProperty(null, 9000,`https://img1.baidu.com/it/u=897925879,2799566943&fm=26&fmt=auto&gp=0.jpg`)
+                            }
+                        });
+                        console.log(entity)
+        // entity.material.uniforms.image = `${this.publicPath}texture/line.png`
+      },
+      // 添加旋转额锥体
+      addRectangular() {
         // let minWGS84 = [121.49971003569267, 31.239999873637704]
         // var maxWGS84 = [121.49972003569267, 31.240009873637704];
-        let position = [{size:100,height:600,minWGS84: [121.50795727975197,31.234456423634083],maxWGS84:[121.50795727975197,31.234456423634083]},
-        {size:50,height:100,minWGS84: [121.48605154398815, 31.237722800606136],maxWGS84:[121.48605154398815, 31.237722800606136]},
-        {size:30,height:50,minWGS84: [121.51615528314545,31.235612061143307],maxWGS84:[121.51615528314545,31.235612061143307]},
-        // {height:100,minWGS84: [121.48412901708002,31.238122873786033],maxWGS84:[121.48412901708002,31.238122873786033]}
-      ]
-       
-        var material = new THREE.MeshBasicMaterial( {color: 0xffff00,transparent:true,opacity:0.5} );
-        var material2 = new THREE.MeshBasicMaterial( {color: 0xffff00,wireframe:true} );
-        
+        let position = [{ size: 100, height: 600, minWGS84: [121.50795727975197, 31.234456423634083], maxWGS84: [121.50795727975197, 31.234456423634083] },
+        { size: 50, height: 100, minWGS84: [121.48605154398815, 31.237722800606136], maxWGS84: [121.48605154398815, 31.237722800606136] },
+        { size: 30, height: 50, minWGS84: [121.51615528314545, 31.235612061143307], maxWGS84: [121.51615528314545, 31.235612061143307] },
+          // {height:100,minWGS84: [121.48412901708002,31.238122873786033],maxWGS84:[121.48412901708002,31.238122873786033]}
+        ]
+
+        var material = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.5 });
+        var material2 = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
+
         var group = new THREE.Group();
-        position.forEach(e=>{
+        position.forEach(e => {
           var geometry = new THREE.TetrahedronGeometry(e.size);
-          var rectMesh = new SceneUtils.createMultiMaterialObject(geometry,[material,material2])
+          var rectMesh = new SceneUtils.createMultiMaterialObject(geometry, [material, material2])  //融合材质
           let res = {
-          threeMesh:rectMesh,
-          minWGS84:e.minWGS84,
-          maxWGS84:e.maxWGS84
-        }
-        this.setThreeObjPosition(res,e.height)
+            threeMesh: rectMesh,
+            minWGS84: e.minWGS84,
+            maxWGS84: e.maxWGS84
+          }
+          this.setThreeObjPosition(res, e.height)
           group.add(rectMesh)
         })
-        
-        three.scene.add( group );
+
+        three.scene.add(group);
 
         return group
       },
-      getSpireModel(){
+      getSpireModel() {
         let minWGS84 = [121.49971003569267, 31.239999873637704]
         var maxWGS84 = [121.49972003569267, 31.240009873637704];
         let that = this
         that.manager = new THREE.LoadingManager();
         new PLYLoader(that.manager).load(
-        `${that.publicPath}model/Lucy100k.ply`,
-        function (geometry) {
-          //   geometry.computeVertexNormals();
-          
-          that.loadedGeometry = geometry.clone();
-          geometry.computeVertexNormals();
+          `${that.publicPath}model/Lucy100k.ply`,
+          function (geometry) {
+            //   geometry.computeVertexNormals();
 
-          let material = new THREE.PointsMaterial({
-            color: 0xffffff,
-            size: 3,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            map: that.generateSprite(),
-          });
-          let personMesh = new THREE.Points(geometry, material);
-          personMesh.sortParticles = true;
-          
-          let res = {
-             threeMesh:personMesh,
-             minWGS84:minWGS84,
-             maxWGS84:maxWGS84
-        }
-        that.setThreeObjPosition(res,500)
-        personMesh.scale.set(0.5, 0.5, 0.5)
-        personMesh.rotation.x = 0
-        personMesh.rotation.y = 0
-        personMesh.rotation.z = 0
-          three.scene.add(personMesh);
-          that.personMeshObj = personMesh
-          return personMesh
-        }
-      );
+            that.loadedGeometry = geometry.clone();
+            geometry.computeVertexNormals();
 
-    },
-    generateSprite() {
-      var canvas = document.createElement("canvas");
-      canvas.width = 16;
-      canvas.height = 16;
+            let material = new THREE.PointsMaterial({
+              color: 0xffffff,
+              size: 3,
+              transparent: true,
+              blending: THREE.AdditiveBlending,
+              map: that.generateSprite(),
+            });
+            let personMesh = new THREE.Points(geometry, material);
+            personMesh.sortParticles = true;
 
-      var context = canvas.getContext("2d");
-      var gradient = context.createRadialGradient(
-        canvas.width / 2,
-        canvas.height / 2,
-        0,
-        canvas.width / 2,
-        canvas.height / 2,
-        canvas.width / 2
-      );
-      gradient.addColorStop(0, "rgba(255,255,255,1)");
-      gradient.addColorStop(0.2, "rgba(255,255,0,1)");
-      gradient.addColorStop(0.4, "rgba(0,0,64,1)");
-      gradient.addColorStop(1, "rgba(0,0,0,1)");
-
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, canvas.width, canvas.height);
-
-      var texture = new THREE.Texture(canvas);
-      texture.needsUpdate = true;
-      return texture;
-    },
-     /* 加载gltf模型 */
-     addPlaneModel() {
-      let dronePromise = Cesium.CzmlDataSource.load(
-        "Source/SampleData/load.czml"
-      );
-
-      //   viewer.zoomTo(dronePromise)
-      dronePromise.then(function (dataSource) {
-        
-        cesium.viewer.dataSources.add(dataSource);
-        // 使用id获取在CZML 数据中定义的无人机entity
-        drone = dataSource.entities.getById("Aircraft/Aircraft1");
-        console.log(drone)
-        // drone.position = new Cartesian3({x:-2851901.1585062477,y: 4653862.8234637035,z:3288760.922783564})
-        // 附加一些三维模型
-        drone.model = {
-          uri: "Source/SampleData/Models/CesiumDrone.gltf",
-          minimumPixelSize: 128,
-          maximumScale: 1000,
-          silhouetteColor: Cesium.Color.WHITE,
-          silhouetteSize: 2,
-        };
-        // 这个无人机模型有方向，但是效果有点奇怪，并没有朝向无人机的前进方向    所以要基于无人机轨迹的位置点，自动计算朝向
-        drone.orientation = new Cesium.VelocityOrientationProperty(
-          drone.position
+            let res = {
+              threeMesh: personMesh,
+              minWGS84: minWGS84,
+              maxWGS84: maxWGS84
+            }
+            that.setThreeObjPosition(res, 500)
+            personMesh.scale.set(0.5, 0.5, 0.5)
+            personMesh.rotation.x = 0
+            personMesh.rotation.y = 0
+            personMesh.rotation.z = 0
+            three.scene.add(personMesh);
+            that.personMeshObj = personMesh
+            return personMesh
+          }
         );
-        // 光滑的路径插值
-        drone.position.setInterpolationOptions({
-          interpolationDegree: 3,
-          interpolationAlgorithm: Cesium.HermitePolynomialApproximation,
-        });
 
-        // viewer.trackedEntity = drone;
-      });
-    },
+      },
+      generateSprite() {
+        var canvas = document.createElement("canvas");
+        canvas.width = 16;
+        canvas.height = 16;
+
+        var context = canvas.getContext("2d");
+        var gradient = context.createRadialGradient(
+          canvas.width / 2,
+          canvas.height / 2,
+          0,
+          canvas.width / 2,
+          canvas.height / 2,
+          canvas.width / 2
+        );
+        gradient.addColorStop(0, "rgba(255,255,255,1)");
+        gradient.addColorStop(0.2, "rgba(255,255,0,1)");
+        gradient.addColorStop(0.4, "rgba(0,0,64,1)");
+        gradient.addColorStop(1, "rgba(0,0,0,1)");
+
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        var texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+      },
+      /* 加载gltf模型 */
+      addPlaneModel() {
+        let dronePromise = Cesium.CzmlDataSource.load(
+          "Source/SampleData/load.czml"
+        );
+
+        //   viewer.zoomTo(dronePromise)
+        dronePromise.then(function (dataSource) {
+
+          cesium.viewer.dataSources.add(dataSource);
+          // 使用id获取在CZML 数据中定义的无人机entity
+          drone = dataSource.entities.getById("Aircraft/Aircraft1");
+          console.log(drone)
+          // drone.position = new Cartesian3({x:-2851901.1585062477,y: 4653862.8234637035,z:3288760.922783564})
+          // 附加一些三维模型
+          drone.model = {
+            uri: "Source/SampleData/Models/CesiumDrone.gltf",
+            minimumPixelSize: 128,
+            maximumScale: 1000,
+            silhouetteColor: Cesium.Color.WHITE,
+            silhouetteSize: 2,
+          };
+          // 这个无人机模型有方向，但是效果有点奇怪，并没有朝向无人机的前进方向    所以要基于无人机轨迹的位置点，自动计算朝向
+          drone.orientation = new Cesium.VelocityOrientationProperty(
+            drone.position
+          );
+          // 光滑的路径插值
+          drone.position.setInterpolationOptions({
+            interpolationDegree: 3,
+            interpolationAlgorithm: Cesium.HermitePolynomialApproximation,
+          });
+
+          // viewer.trackedEntity = drone;
+        });
+      },
 
     },
   };
