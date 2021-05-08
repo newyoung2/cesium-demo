@@ -67,6 +67,7 @@ const menu = [
       { name: '道路流光(特效)', value: 'lightRoad'},
       { name: '城市3d模型（基于three.js）', value: 'threeCityModel'},
       { name: '浮动盒子', value: 'floatBox'},
+      { name: '热力图', value: 'heatmap'},
       { name: '智慧城市', value: 'indexCity'},
       ]
   },

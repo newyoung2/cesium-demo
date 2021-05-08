@@ -55,6 +55,10 @@
     methods: {
       init() {
         let that = this
+        var geeMetadata = new GoogleEarthEnterpriseMetadata('http://www.earthenterprise.org/3d');
+var gee = new Cesium.GoogleEarthEnterpriseTerrainProvider({
+    metadata : geeMetadata
+});
         /* 
            初始化
          */
@@ -67,18 +71,20 @@
           navigationHelpButton: false, // 默认的相机控制提示控件
           fullscreenButton: false, // 全屏控件
           scene3DOnly: true, // 每个几何实例仅以3D渲染以节省GPU内存
-          baseLayerPicker: true, // 底图切换控件
+          baseLayerPicker: false, // 底图切换控件
           animation: false, // 控制场景动画的播放速度控件
-          imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
-            url:
-              "http://cache1.arcgisonline.cn/arcgis/rest/services/ChinaOnlineCommunity/MapServer/tile/{z}/{y}/{x}",
-          }),
+          // terrainProvider: gee,
+          imageryProvider:new Cesium.BingMapsImageryProvider({
+             url : 'https://dev.virtualearth.net',
+             key : 'AtQ0QJxTOCYmAUOKC8g3v-nZAAcxLy_2c6fiJDFDFW-mdIS1iOIhfwSqs1G_I7IV'
+          })
         };
 
         //使用ion数据   需要先申请token
-        Cesium.Ion.defaultAccessToken =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZjFjYmZmNS1hYmNjLTRhZWUtYjlkNi02ODVmOGRjNGQ2N2MiLCJpZCI6Mzg4MzUsImlhdCI6MTYwNjg3Mzk0MX0.R0iO5eELEnpRqQCzoa33UZakcsTYUidaTP9nLa342wY";
-        viewer = new Cesium.Viewer("cesiumContainer", viewerOption);
+        // Cesium.Ion.defaultAccessToken =
+        //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZjFjYmZmNS1hYmNjLTRhZWUtYjlkNi02ODVmOGRjNGQ2N2MiLCJpZCI6Mzg4MzUsImlhdCI6MTYwNjg3Mzk0MX0.R0iO5eELEnpRqQCzoa33UZakcsTYUidaTP9nLa342wY";
+        
+          viewer = new Cesium.Viewer("cesiumContainer", viewerOption);
         viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
 
 //       let item = viewer.entities.add({
@@ -105,10 +111,11 @@
 
         // 加载3dtiles模型
         that.load3DTileModel() 
+        that.scanLine()
         //添加鼠标左击事件 
         that.addLeftClickEvent()
         //添加鼠标左击事件 
-        that.addRightClickEvent()
+        // that.addRightClickEvent()
        
       },
       // 加载3dtiles模型
@@ -159,43 +166,83 @@
         viewer.scene.primitives.add(ldCollection);
       },
       addLeftClickEvent(){
+        let that = this
         handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+       
         handler.setInputAction(function (movement) {
-          if (that.isDrawPoint) {
-            /* 获取当前点击的屏幕坐标，并转换为笛卡尔坐标 */
-            // var ray = viewer.scene.camera.getPickRay(movement.position);
-            // var cartesian = viewer.scene.globe.pick(ray, viewer.scene);
-            var cartesian = viewer.scene.pickPosition(movement.position);
+          var cartesian = viewer.scene.pickPosition(movement.position);
             /* 将笛卡尔坐标转换为经纬度坐标 */
             let cartographic = Cesium.Cartographic.fromCartesian(cartesian);
             let longitude = Cesium.Math.toDegrees(cartographic.longitude);
             let latitude = Cesium.Math.toDegrees(cartographic.latitude);
             let height = cartographic.height;
-            //   console.log(longitude,latitude,height)
-            // that.drawBillboard(clampedCartesians)
-            that.drawPoint({ longitude, latitude, height }, cartesian)
-          } else {
-            var pick = viewer.scene.pick(movement.position);
-
-            if (Cesium.defined(pick) && Cesium.defined(pick.id)) {
-              if (pick.id === selected) return;
-              Cesium.defined(selected) && ((attribute = primitive.getGeometryInstanceAttributes(selected)).color = color, attribute.show = r, selected = void 0, primitive = void 0, color = void 0, r = void 0);
-              // console.log(pick.id)
-            }
-            Cesium.defined(pick) && Cesium.defined(pick.primitive) && Cesium.defined(pick.id) && Cesium.defined(pick.primitive.getGeometryInstanceAttributes) ?
-              (selected = pick.id,
-                primitive = pick.primitive,
-                attribute = primitive.getGeometryInstanceAttributes(selected),
-                color = attribute.color,
-                r = attribute.show,
-                viewer.scene.invertClassification
-                || (attribute.color = [255, 0, 255, 128]), attribute.show = [1])
-              : Cesium.defined(selected) && ((attribute = primitive.getGeometryInstanceAttributes(selected)).color = color, attribute.show = r, selected = void 0, primitive = void 0, color = void 0)
-
-          }
+              console.log(longitude,latitude,height)
+            
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
       },
-     
+      scanLine(){
+        var cartesian1 = Cesium.Cartesian3.fromDegrees(106.70707216579464,26.56379390155953);
+        var cartesian2 = Cesium.Cartesian3.fromDegrees(106.7079252734644,26.562935758126347);
+
+  var count = 300;
+  var cartesians = new Array(count);
+  for (var i = 0; i < count; ++i) {
+    var offset = i / (count - 1);
+    cartesians[i] = Cesium.Cartesian3.lerp(
+      cartesian1,
+      cartesian2,
+      offset,
+      new Cesium.Cartesian3()
+    );
+  }
+  // console.log(cartesians)
+        let position = [106.70687752201412,26.563720844320446,
+        106.70705799645077,26.563905853809782,
+        106.70788118373893,26.562992300929444,
+        106.70771926639411,26.562893255731105]
+        
+        // viewer.scene.primitives.add(new Cesium.ClassificationPrimitive({
+        //         geometryInstances: new Cesium.GeometryInstance({
+        //             geometry: new Cesium.PolygonGeometry({
+        //                 polygonHierarchy: new Cesium.PolygonHierarchy(
+        //                   Cesium.Cartesian3.fromDegreesArray(position)
+        //                 ),
+        //                 extrudedHeight: 10000,//e.height
+        //                 height: -100,
+        //                 //vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+        //             }),
+        //             attributes: {//顶点着色器属性
+        //                 color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromCssColorString('#55B9E7').withAlpha(0.5)),
+        //                 show: new Cesium.ShowGeometryInstanceAttribute(true), //确定是否显示几何实例
+        //             },
+        //             id:'555',
+
+        //         }),
+        //         classificationType: Cesium.ClassificationType.CESIUM_3D_TILE, //是否影响地形
+
+        //     }))
+
+            var primitive = new Cesium.GroundPrimitive({
+            geometryInstances: new Cesium.GeometryInstance({
+                geometry: new Cesium.PolygonGeometry({
+                        polygonHierarchy: new Cesium.PolygonHierarchy(
+                          Cesium.Cartesian3.fromDegreesArray(position)
+                        ),
+                        extrudedHeight: 10000,//e.height
+                        height: -100,
+                        //vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+                    })
+            }),
+            appearance: new Cesium.EllipsoidSurfaceAppearance({
+                aboveGround: true
+            }),
+            classificationType : Cesium.ClassificationType.BOTH,	// 支持类型： 地形、3DTile、或者在地面上
+            show: true
+        });
+        viewer.scene.primitives.add(primitive)
+
+        console.log(viewer.scene.primitives)
+      },
       // 画点
       drawPoint(cartographic, cartesian) {
         this.pointArr.push(cartographic)

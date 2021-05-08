@@ -53,7 +53,35 @@ export default {
       //   }));
       viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
       this.goSH()
+      this.scanLine()
     },
+    scanLine(){
+        
+        let position = [121.49040423094851,31.24897428717897,
+        121.50983593820013,31.24146639073815,
+        121.50409158799692,31.231264816442277,
+        121.48497930661024,31.23775660317917]
+      
+            var primitive = new Cesium.GroundPrimitive({
+            geometryInstances: new Cesium.GeometryInstance({
+                geometry: new Cesium.PolygonGeometry({
+                        polygonHierarchy: new Cesium.PolygonHierarchy(
+                          Cesium.Cartesian3.fromDegreesArray(position)
+                        ),
+                        extrudedHeight: 10000,//e.height
+                        height: -100,
+                        //vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+                    })
+            }),
+            appearance: new Cesium.EllipsoidSurfaceAppearance({
+                aboveGround: true
+            }),
+            classificationType : Cesium.ClassificationType.BOTH,	// 支持类型： 地形、3DTile、或者在地面上
+            show: true
+        });
+        viewer.scene.primitives.add(primitive)
+        console.log( viewer.scene.primitives)
+      },
     goSH() {
       viewer.scene.primitives.add(Cesium.createOsmBuildings());
       viewer.scene.camera.flyTo({

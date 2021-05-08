@@ -43,20 +43,62 @@ export default {
       });
       viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
       // 设置时钟和时间线
-      // viewer.clock.shouldAnimate = true; // 当viewer开启后，启动动画
-      // viewer.clock.startTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
-      // viewer.clock.stopTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:20:00Z");
-      // viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
-      // viewer.clock.multiplier = 2; // 设置加速倍率
-      // viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER; // tick computation mode(还没理解具体含义)
-      // viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // 循环播放
-      // viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime); // 设置时间的可见范围
-      // this.addCityModel();
+      viewer.clock.shouldAnimate = true; // 当viewer开启后，启动动画
+      viewer.clock.startTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
+      viewer.clock.stopTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:20:00Z");
+      viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
+      viewer.clock.multiplier = 2; // 设置加速倍率
+      viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER; // tick computation mode(还没理解具体含义)
+      viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // 循环播放
+      viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime); // 设置时间的可见范围
+      this.addCityModel();
       // this.addCityPolygon();
       this.addPlaneModel();
-      // this.add3DTiles();
-      
+      this.add3DTiles();
+      this.addLeftClickEvent()
+      this.scanLine()
     },
+    scanLine(){
+        
+        let position = [-73.98442902418222,40.77482166676269,
+        -73.9584609923341,40.76624863870913,
+        -73.98935479674451,40.75088129972139]
+      
+            var primitive = new Cesium.GroundPrimitive({
+            geometryInstances: new Cesium.GeometryInstance({
+                geometry: new Cesium.PolygonGeometry({
+                        polygonHierarchy: new Cesium.PolygonHierarchy(
+                          Cesium.Cartesian3.fromDegreesArray(position)
+                        ),
+                        extrudedHeight: 10000,//e.height
+                        height: -100,
+                        //vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+                    })
+            }),
+            appearance: new Cesium.EllipsoidSurfaceAppearance({
+                aboveGround: true
+            }),
+            classificationType : Cesium.ClassificationType.BOTH,	// 支持类型： 地形、3DTile、或者在地面上
+            show: true
+        });
+        viewer.scene.primitives.add(primitive)
+        console.log(viewer.scene.primitives)
+      },
+    addLeftClickEvent(){
+        let that = this
+        handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+       
+        handler.setInputAction(function (movement) {
+          var cartesian = viewer.scene.pickPosition(movement.position);
+            /* 将笛卡尔坐标转换为经纬度坐标 */
+            let cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+            let longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            let latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            let height = cartographic.height;
+              console.log(longitude,latitude,height)
+            
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+      },
     /*  */
     addCityModel() {
       /* 对于KmlDataSource，camera 和 canvas 选项必须要配置 */

@@ -5,7 +5,9 @@
   </div>
 </template>
 <script>
-
+  import heatmap from "heatmap.js"
+  import axios from "axios"
+  import GPS from "./js/latlngChange.js"
   import * as THREE from "THREE";
   import { SceneUtils } from 'three/examples/jsm/utils/SceneUtils.js';
   import { PLYLoader } from "three/examples/jsm/loaders/PLYLoader.js";
@@ -22,6 +24,7 @@
     scene: null,
   };
 
+  var viewer
   var cesium = {
     viewer: null,
   };
@@ -33,6 +36,7 @@
         controls: null,
         electBoxObj: null,
         lightLineObj: null,
+        scanLineObj: null,
         rectObj: null,
         loadedGeometry: null,
         personMeshObj: null,
@@ -97,6 +101,7 @@
 
 
       this.main();
+      console.log(heatmap)
     },
     methods: {
       main() {
@@ -176,17 +181,19 @@
       // 初始化两个库里的3d对象
       init3DObject() {
         //添加cesium对象
-        this.ODLine()
-        this.addWall()
-        this.addBuildings()
-        // this.codeLine()
+        this.ODLine()  //飞行轨迹线
+        this.addWall()  //动态纹理墙壁
+        this.addBuildings()   //建筑模型
+        // this.addDynamicRadar()  //扩散雷达扫描线
+        // this.addDynamicRadar1()  //扩散雷达扫描线
+        
 
         // 添加three对象
-        this.electBoxObj = this.addElectBox()
-        this.scatterCircle()
-        // this.lightLineObj = this.lightLine()
-        this.rectObj = this.addRectangular()
-        // this.getSpireModel()
+        this.electBoxObj = this.addElectBox()  //能量罩
+        this.scatterCircle()   //扩散圆
+        this.lightLineObj = this.lightLine()  //竖直OD线条
+        this.rectObj = this.addRectangular()   //旋转锥体
+        // this.getSpireModel()  //加载ply模型  并转化为精灵材质
       },
       // 循环渲染
       loop() {
@@ -335,8 +342,8 @@
 
 
         var tileset = new Cesium.Cesium3DTileset({
-          url: "test3/tileset.json",
-          maximumScreenSpaceError: 16,
+          url: "test2/tileset.json",
+          maximumScreenSpaceError: 4,
           maximumNumberOfLoadedTiles: 1000,
         });
         cesium.viewer.scene.primitives.add(tileset);
@@ -605,7 +612,7 @@
       lightLine() {
         let minWGS84 = [121.49971003569267, 31.239999873637704]
         var maxWGS84 = [121.49972003569267, 31.240009873637704];
-        let texture = new THREE.TextureLoader().load(`${this.publicPath}texture/nanshan-road1.png`)
+        let texture = new THREE.TextureLoader().load(`${this.publicPath}texture/line.png`)
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping; //每个都重复
         texture.repeat.set(1, 1)
         texture.needsUpdate = true
@@ -619,34 +626,39 @@
         })
 
         // 创建顶点数组
+
         let points = [
-          [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 5, 5), new THREE.Vector3(0, 8, 0)],
-          [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 6, 7), new THREE.Vector3(9, 0, 0)],
-          [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -6, 7), new THREE.Vector3(5, -35, 0)],
-          [new THREE.Vector3(0, 0, 0), new THREE.Vector3(-5, -1, 5), new THREE.Vector3(-10, -3, 0)]]
+          [121.48202749938409, 31.221985479874512],
+          [121.47794413604615, 31.26901625975226],
+          [121.49874265570466, 31.20666485501269],
+          [121.54108827427831, 31.33233924309932],
+          [121.63422440576947, 31.273286637545194]
+        ]
 
 
         var group = new THREE.Group();
 
         points.forEach(e => {
           // CatmullRomCurve3创建一条平滑的三维样条曲线
-          let curve = new THREE.CatmullRomCurve3(e) // 曲线路径
+          let curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 100)]) // 曲线路径
 
           // 创建管道
           let tubeGeometry = new THREE.TubeGeometry(curve, 80, 0.1)
 
           let mesh = new THREE.Mesh(tubeGeometry, material);
           mesh.scale.set(150, 150, 150)
+          let res = {
+            threeMesh: mesh,
+            minWGS84: e,
+            maxWGS84: e
+          }
+          this.setThreeObjPosition(res)
+
           group.add(mesh)
         })
 
         three.scene.add(group);
-        let res = {
-          threeMesh: group,
-          minWGS84,
-          maxWGS84
-        }
-        this.setThreeObjPosition(res)
+
 
         return group
       },
@@ -675,7 +687,7 @@
             let cartesian3 = spline.evaluate(i / 500);
             positions.push(cartesian3);
           }
-          
+
           /* 根据数据绘制od线 */
           // let a = new Cesium.PolylineTrailLinkMaterialProperty(null, 3000)
           // let Material = new Cesium.PolylineTrailLinkMaterialProperty(null, 3000)
@@ -692,19 +704,48 @@
           });
         })
 
-       
+
       },
-     
-      codeLine(){
+      scanLine() {
+
+        let position = [121.49040423094851, 31.24897428717897,
+          121.50983593820013, 31.24146639073815,
+          121.50409158799692, 31.231264816442277,
+          121.48497930661024, 31.23775660317917]
+
+        let instance = new Cesium.GeometryInstance({
+          geometry: new Cesium.PolygonGeometry({
+            polygonHierarchy: new Cesium.PolygonHierarchy(
+              Cesium.Cartesian3.fromDegreesArray(position)
+            ),
+            extrudedHeight: 10000000,//e.height
+            height: -100,
+            vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+          })
+        })
+        var primitive = new Cesium.GroundPrimitive({
+          geometryInstances: instance,
+          appearance: new Cesium.EllipsoidSurfaceAppearance({
+            aboveGround: true
+          }),
+          classificationType: Cesium.ClassificationType.BOTH,	// 支持类型： 地形、3DTile、或者在地面上
+          show: true
+        });
+        cesium.viewer.scene.primitives.add(primitive)
+        return instance
+
+
+      },
+      codeLine() {
         let arr = [
-          [121.49013735991807, 31.232977794178908, 0,121.49013735991807, 31.232977794178908, 10000],
-          [121.48997152310628, 31.249634173869836, 0,121.48997152310628, 31.249634173869836, 10000],
-          [121.53994551468021, 31.27774008101418, 0,121.53994551468021, 31.27774008101418, 10000],
-          [121.51360824805317, 31.2318641147962, 0,121.51360824805317, 31.2318641147962, 10000],
-          [121.55710892258877, 31.227136256013686, 0,121.55710892258877, 31.227136256013686, 10000],
+          [121.49013735991807, 31.232977794178908, 0, 121.49013735991807, 31.232977794178908, 10000],
+          [121.48997152310628, 31.249634173869836, 0, 121.48997152310628, 31.249634173869836, 10000],
+          [121.53994551468021, 31.27774008101418, 0, 121.53994551468021, 31.27774008101418, 10000],
+          [121.51360824805317, 31.2318641147962, 0, 121.51360824805317, 31.2318641147962, 10000],
+          [121.55710892258877, 31.227136256013686, 0, 121.55710892258877, 31.227136256013686, 10000],
         ]
         let obj = null
-        arr.map(e=>{
+        arr.map(e => {
           let controls = Cesium.Cartesian3.fromDegreesArrayHeights(e);
           obj = cesium.viewer.entities.add({
             name: 'PolylineTrail1',
@@ -718,21 +759,22 @@
         // obj.polyline.material.image = 'https://img1.baidu.com/it/u=897925879,2799566943&fm=26&fmt=auto&gp=0.jpg'
         // console.log(obj)
       },
-      addWall(){
-        let arr = [121.53415988151373,31.240442807182433, 200.0,
-        121.54519435235682,31.238860691269554, 200.0,
-        121.54158670353141,31.231993151255345, 200.0,
-        121.53134619657078,31.23454218401985,200.0,
-        121.53415988151373,31.240442807182433, 200.0]
+      // 流动纹理墙
+      addWall() {
+        let arr = [121.53415988151373, 31.240442807182433, 200.0,
+          121.54519435235682, 31.238860691269554, 200.0,
+          121.54158670353141, 31.231993151255345, 200.0,
+          121.53134619657078, 31.23454218401985, 200.0,
+          121.53415988151373, 31.240442807182433, 200.0]
         // Cesium.Material.PolylineTrailLinkImage = `${this.publicPath}texture/line.png`;
-        let entity =  cesium.viewer.entities.add({
-                            name: 'WallTrail',
-                            wall: {
-                                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arr),
-                                material: new Cesium.PolylineTrailLinkMaterialProperty(null, 9000,`https://img1.baidu.com/it/u=897925879,2799566943&fm=26&fmt=auto&gp=0.jpg`)
-                            }
-                        });
-                        console.log(entity)
+        let entity = cesium.viewer.entities.add({
+          name: 'WallTrail',
+          wall: {
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights(arr),
+            material: new Cesium.PolylineTrailLinkMaterialProperty(null, 9000, `https://img1.baidu.com/it/u=897925879,2799566943&fm=26&fmt=auto&gp=0.jpg`)
+          }
+        });
+        console.log(entity)
         // entity.material.uniforms.image = `${this.publicPath}texture/line.png`
       },
       // 添加旋转额锥体
@@ -866,6 +908,361 @@
           // viewer.trackedEntity = drone;
         });
       },
+      // 路网模块***********************************************************************************
+      addGeoJson() {
+        var positions = []
+        axios.get('./Data/shanghaiload.json').then(res => {
+
+
+          res.data.geometries.map(e => {
+            let arr = []
+            e.coordinates.map(e1 => {
+              let r = GPS.gcj_encrypt(e1[0], e1[1])
+              arr.push(r.lat)
+              arr.push(r.lon)
+            })
+            positions.push(arr)
+          })
+
+          positions.map(e => {
+            cesium.viewer.entities.add({
+              name: 'PolylineTrail',
+              polyline: {
+                positions: Cesium.Cartesian3.fromDegreesArray(e),
+                width: 8,
+                arcType: Cesium.ArcType.NONE,
+                material: new Cesium.PolylineGlowMaterialProperty({
+                  glowPower: 0.3,
+                  color: Cesium.Color.BLUE.withAlpha(0.3),
+
+                })
+              }
+            });
+          })
+
+
+        })
+      },
+      // 扩散雷达扫描线 ***********************************************
+      addDynamicRadar() {
+        var CartographicCenter = new Cesium.Cartographic(Cesium.Math.toRadians(121.49872890304215), Cesium.Math.toRadians(31.23811931903695), 1000);
+        var scanColor = new Cesium.Color(0, 0, 1, 1);
+        this.AddCircleScanPostStage(cesium.viewer, CartographicCenter, 10000, scanColor, 4000);
+      },
+      AddCircleScanPostStage(viewer, cartographicCenter, maxRadius, scanColor, duration) {
+
+        var ScanSegmentShader =
+
+          "uniform sampler2D colorTexture;\n" +
+
+          "uniform sampler2D depthTexture;\n" +
+
+          "varying vec2 v_textureCoordinates;\n" +
+
+          "uniform vec4 u_scanCenterEC;\n" +
+
+          "uniform vec3 u_scanPlaneNormalEC;\n" +
+
+          "uniform float u_radius;\n" +
+
+          "uniform vec4 u_scanColor;\n" +
+
+          "vec4 toEye(in vec2 uv, in float depth)\n" +
+
+          " {\n" +
+
+          " vec2 xy = vec2((uv.x * 2.0 - 1.0),(uv.y * 2.0 - 1.0));\n" +
+
+          " vec4 posInCamera =czm_inverseProjection * vec4(xy, depth, 1.0);\n" +
+
+          " posInCamera =posInCamera / posInCamera.w;\n" +
+
+          " return posInCamera;\n" +
+
+          " }\n" +
+
+          "vec3 pointProjectOnPlane(in vec3 planeNormal, in vec3 planeOrigin, in vec3 point)\n" +
+
+          "{\n" +
+
+          "vec3 v01 = point -planeOrigin;\n" +
+
+          "float d = dot(planeNormal, v01) ;\n" +
+
+          "return (point - planeNormal * d);\n" +
+
+          "}\n" +
+
+          "float getDepth(in vec4 depth)\n" +
+
+          "{\n" +
+
+          "float z_window = czm_unpackDepth(depth);\n" +
+
+          "z_window = czm_reverseLogDepth(z_window);\n" +
+
+          "float n_range = czm_depthRange.near;\n" +
+
+          "float f_range = czm_depthRange.far;\n" +
+
+          "return (2.0 * z_window - n_range - f_range) / (f_range - n_range);\n" +
+
+          "}\n" +
+
+          "void main()\n" +
+
+          "{\n" +
+
+          "gl_FragColor = texture2D(colorTexture, v_textureCoordinates);\n" +
+
+          "float depth = getDepth( texture2D(depthTexture, v_textureCoordinates));\n" +
+
+          "vec4 viewPos = toEye(v_textureCoordinates, depth);\n" +
+
+          "vec3 prjOnPlane = pointProjectOnPlane(u_scanPlaneNormalEC.xyz, u_scanCenterEC.xyz, viewPos.xyz);\n" +
+
+          "float dis = length(prjOnPlane.xyz - u_scanCenterEC.xyz);\n" +
+
+          "if(dis < u_radius)\n" +
+
+          "{\n" +
+
+          "float f = 1.0 -abs(u_radius - dis) / u_radius;\n" +
+
+          "f = pow(f, 4.0);\n" +
+
+          "gl_FragColor = mix(gl_FragColor, u_scanColor, f);\n" +
+
+          "}\n" +
+
+          "}\n";
+
+        var _Cartesian3Center = Cesium.Cartographic.toCartesian(cartographicCenter);
+
+        var _Cartesian4Center = new Cesium.Cartesian4(_Cartesian3Center.x, _Cartesian3Center.y, _Cartesian3Center.z, 1);
+
+        var _CartographicCenter1 = new Cesium.Cartographic(cartographicCenter.longitude, cartographicCenter.latitude, cartographicCenter.height + 500);
+
+        var _Cartesian3Center1 = Cesium.Cartographic.toCartesian(_CartographicCenter1);
+
+        var _Cartesian4Center1 = new Cesium.Cartesian4(_Cartesian3Center1.x, _Cartesian3Center1.y, _Cartesian3Center1.z, 1);
+
+        var _time = (new Date()).getTime();
+
+        var _scratchCartesian4Center = new Cesium.Cartesian4();
+
+        var _scratchCartesian4Center1 = new Cesium.Cartesian4();
+
+        var _scratchCartesian3Normal = new Cesium.Cartesian3();
+
+        var ScanPostStage = new Cesium.PostProcessStage({
+
+          fragmentShader: ScanSegmentShader,
+
+          uniforms: {
+
+            u_scanCenterEC: function () {
+
+              return Cesium.Matrix4.multiplyByVector(viewer.camera._viewMatrix, _Cartesian4Center, _scratchCartesian4Center);
+
+            },
+
+            u_scanPlaneNormalEC: function () {
+
+              var temp = Cesium.Matrix4.multiplyByVector(viewer.camera._viewMatrix, _Cartesian4Center, _scratchCartesian4Center);
+
+              var temp1 = Cesium.Matrix4.multiplyByVector(viewer.camera._viewMatrix, _Cartesian4Center1, _scratchCartesian4Center1);
+
+              _scratchCartesian3Normal.x = temp1.x - temp.x;
+
+              _scratchCartesian3Normal.y = temp1.y - temp.y;
+
+              _scratchCartesian3Normal.z = temp1.z - temp.z;
+
+              Cesium.Cartesian3.normalize(_scratchCartesian3Normal, _scratchCartesian3Normal);
+
+              return _scratchCartesian3Normal;
+
+            },
+
+            u_radius: function () {
+
+              return maxRadius * (((new Date()).getTime() - _time) % duration) / duration;
+
+            },
+
+            u_scanColor: scanColor
+
+          }
+
+        });
+
+        viewer.scene.postProcessStages.add(ScanPostStage);
+
+      },
+      addDynamicRadar1(){
+        // 定义经纬度
+        var longitude = "121.60142353971058";
+                var latitude = "31.23530433597591";
+                // 雷达扫描中心（三维空间坐标）
+                var geographySpace = new Cesium.Cartographic(Cesium.Math.toRadians(longitude), Cesium.Math.toRadians(latitude), 500);
+                // 扫描颜色
+                var scanColor = new Cesium.Color(0.0, 2.0, 1.0, 1);
+                // 持续时间 毫秒
+                var duration = 4000;
+                var radarRadius = 4000
+                // 绘制平面雷达扫描线
+                this.addRadarScanPostStage(cesium.viewer,geographySpace, radarRadius, scanColor, duration);
+      },
+      
+      /*
+              添加雷达扫描线 地形遮挡开启
+              cartographicCenter 扫描中心【new Cesium.Cartographic(Cesium.Math.toRadians(lon), Cesium.Math.toRadians(lat), 0);】
+              radius  半径 米【1500】
+              scanColor 扫描颜色【new Cesium.Color(1.0, 0.0, 0.0, 1)】
+              duration 持续时间 毫秒【4000】
+            */
+            addRadarScanPostStage(viewer,cartographicCenter, radius, scanColor, duration) {
+                
+                var ScanSegmentShader =
+                    "uniform sampler2D colorTexture;\n" +
+                    "uniform sampler2D depthTexture;\n" +
+                    "varying vec2 v_textureCoordinates;\n" +
+                    "uniform vec4 u_scanCenterEC;\n" +
+                    "uniform vec3 u_scanPlaneNormalEC;\n" +
+                    "uniform vec3 u_scanLineNormalEC;\n" +
+                    "uniform float u_radius;\n" +
+                    "uniform vec4 u_scanColor;\n" +
+
+                    "vec4 toEye(in vec2 uv, in float depth)\n" +
+                    " {\n" +
+                    " vec2 xy = vec2((uv.x * 2.0 - 1.0),(uv.y * 2.0 - 1.0));\n" +
+                    " vec4 posInCamera =czm_inverseProjection * vec4(xy, depth, 1.0);\n" +
+                    " posInCamera =posInCamera / posInCamera.w;\n" +
+                    " return posInCamera;\n" +
+                    " }\n" +
+
+                    "bool isPointOnLineRight(in vec3 ptOnLine, in vec3 lineNormal, in vec3 testPt)\n" +
+                    "{\n" +
+                    "vec3 v01 = testPt - ptOnLine;\n" +
+                    "normalize(v01);\n" +
+                    "vec3 temp = cross(v01, lineNormal);\n" +
+                    "float d = dot(temp, u_scanPlaneNormalEC);\n" +
+                    "return d > 0.5;\n" +
+                    "}\n" +
+
+                    "vec3 pointProjectOnPlane(in vec3 planeNormal, in vec3 planeOrigin, in vec3 point)\n" +
+                    "{\n" +
+                    "vec3 v01 = point -planeOrigin;\n" +
+                    "float d = dot(planeNormal, v01) ;\n" +
+                    "return (point - planeNormal * d);\n" +
+                    "}\n" +
+
+                    "float distancePointToLine(in vec3 ptOnLine, in vec3 lineNormal, in vec3 testPt)\n" +
+                    "{\n" +
+                    "vec3 tempPt = pointProjectOnPlane(lineNormal, ptOnLine, testPt);\n" +
+                    "return length(tempPt - ptOnLine);\n" +
+                    "}\n" +
+
+                    "float getDepth(in vec4 depth)\n" +
+                    "{\n" +
+                    "float z_window = czm_unpackDepth(depth);\n" +
+                    "z_window = czm_reverseLogDepth(z_window);\n" +
+                    "float n_range = czm_depthRange.near;\n" +
+                    "float f_range = czm_depthRange.far;\n" +
+                    "return (2.0 * z_window - n_range - f_range) / (f_range - n_range);\n" +
+                    "}\n" +
+
+                    "void main()\n" +
+                    "{\n" +
+                    "gl_FragColor = texture2D(colorTexture, v_textureCoordinates);\n" +
+                    "float depth = getDepth( texture2D(depthTexture, v_textureCoordinates));\n" +
+                    "vec4 viewPos = toEye(v_textureCoordinates, depth);\n" +
+                    "vec3 prjOnPlane = pointProjectOnPlane(u_scanPlaneNormalEC.xyz, u_scanCenterEC.xyz, viewPos.xyz);\n" +
+                    "float dis = length(prjOnPlane.xyz - u_scanCenterEC.xyz);\n" +
+                    "float twou_radius = u_radius * 2.0;\n" +
+                    "if(dis < u_radius)\n" +
+                    "{\n" +
+                    "float f0 = 1.0 -abs(u_radius - dis) / u_radius;\n" +
+                    "f0 = pow(f0, 64.0);\n" +
+                    "vec3 lineEndPt = vec3(u_scanCenterEC.xyz) + u_scanLineNormalEC * u_radius;\n" +
+                    "float f = 0.0;\n" +
+                    "if(isPointOnLineRight(u_scanCenterEC.xyz, u_scanLineNormalEC.xyz, prjOnPlane.xyz))\n" +
+                    "{\n" +
+                    "float dis1= length(prjOnPlane.xyz - lineEndPt);\n" +
+                    "f = abs(twou_radius -dis1) / twou_radius;\n" +
+                    "f = pow(f, 3.0);\n" +
+                    "}\n" +
+                    "gl_FragColor = mix(gl_FragColor, u_scanColor, f + f0);\n" +
+                    "}\n" +
+                    "}\n";
+
+                var _Cartesian3Center = Cesium.Cartographic.toCartesian(cartographicCenter);
+                var _Cartesian4Center = new Cesium.Cartesian4(_Cartesian3Center.x, _Cartesian3Center.y, _Cartesian3Center.z, 1);
+
+                var _CartographicCenter1 = new Cesium.Cartographic(cartographicCenter.longitude, cartographicCenter.latitude, cartographicCenter.height + 500);
+                var _Cartesian3Center1 = Cesium.Cartographic.toCartesian(_CartographicCenter1);
+                var _Cartesian4Center1 = new Cesium.Cartesian4(_Cartesian3Center1.x, _Cartesian3Center1.y, _Cartesian3Center1.z, 1);
+
+                var _CartographicCenter2 = new Cesium.Cartographic(cartographicCenter.longitude + Cesium.Math.toRadians(0.001), cartographicCenter.latitude, cartographicCenter.height);
+                var _Cartesian3Center2 = Cesium.Cartographic.toCartesian(_CartographicCenter2);
+                var _Cartesian4Center2 = new Cesium.Cartesian4(_Cartesian3Center2.x, _Cartesian3Center2.y, _Cartesian3Center2.z, 1);
+                var _RotateQ = new Cesium.Quaternion();
+                var _RotateM = new Cesium.Matrix3();
+
+                var _time = (new Date()).getTime();
+
+                var _scratchCartesian4Center = new Cesium.Cartesian4();
+                var _scratchCartesian4Center1 = new Cesium.Cartesian4();
+                var _scratchCartesian4Center2 = new Cesium.Cartesian4();
+                var _scratchCartesian3Normal = new Cesium.Cartesian3();
+                var _scratchCartesian3Normal1 = new Cesium.Cartesian3();
+
+                var ScanPostStage = new Cesium.PostProcessStage({
+                    fragmentShader: ScanSegmentShader,
+                    uniforms: {
+                        u_scanCenterEC: function () {
+                            return Cesium.Matrix4.multiplyByVector(viewer.camera._viewMatrix, _Cartesian4Center, _scratchCartesian4Center);
+                        },
+                        u_scanPlaneNormalEC: function () {
+                            var temp = Cesium.Matrix4.multiplyByVector(viewer.camera._viewMatrix, _Cartesian4Center, _scratchCartesian4Center);
+                            var temp1 = Cesium.Matrix4.multiplyByVector(viewer.camera._viewMatrix, _Cartesian4Center1, _scratchCartesian4Center1);
+                            _scratchCartesian3Normal.x = temp1.x - temp.x;
+                            _scratchCartesian3Normal.y = temp1.y - temp.y;
+                            _scratchCartesian3Normal.z = temp1.z - temp.z;
+
+                            Cesium.Cartesian3.normalize(_scratchCartesian3Normal, _scratchCartesian3Normal);
+                            return _scratchCartesian3Normal;
+                        },
+                        u_radius: radius,
+                        u_scanLineNormalEC: function () {
+                            var temp = Cesium.Matrix4.multiplyByVector(viewer.camera._viewMatrix, _Cartesian4Center, _scratchCartesian4Center);
+                            var temp1 = Cesium.Matrix4.multiplyByVector(viewer.camera._viewMatrix, _Cartesian4Center1, _scratchCartesian4Center1);
+                            var temp2 = Cesium.Matrix4.multiplyByVector(viewer.camera._viewMatrix, _Cartesian4Center2, _scratchCartesian4Center2);
+
+                            _scratchCartesian3Normal.x = temp1.x - temp.x;
+                            _scratchCartesian3Normal.y = temp1.y - temp.y;
+                            _scratchCartesian3Normal.z = temp1.z - temp.z;
+
+                            Cesium.Cartesian3.normalize(_scratchCartesian3Normal, _scratchCartesian3Normal);
+
+                            _scratchCartesian3Normal1.x = temp2.x - temp.x;
+                            _scratchCartesian3Normal1.y = temp2.y - temp.y;
+                            _scratchCartesian3Normal1.z = temp2.z - temp.z;
+
+                            var tempTime = (((new Date()).getTime() - _time) % duration) / duration;
+                            Cesium.Quaternion.fromAxisAngle(_scratchCartesian3Normal, tempTime * Cesium.Math.PI * 2, _RotateQ);
+                            Cesium.Matrix3.fromQuaternion(_RotateQ, _RotateM);
+                            Cesium.Matrix3.multiplyByVector(_RotateM, _scratchCartesian3Normal1, _scratchCartesian3Normal1);
+                            Cesium.Cartesian3.normalize(_scratchCartesian3Normal1, _scratchCartesian3Normal1);
+                            return _scratchCartesian3Normal1;
+                        },
+                        u_scanColor: scanColor
+                    }
+                });
+
+                viewer.scene.postProcessStages.add(ScanPostStage);
+            },
 
     },
   };

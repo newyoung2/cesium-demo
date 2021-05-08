@@ -206,6 +206,11 @@ const routes = [
         name: 'indexCity',
         component: () => import( '../views/wisdomCity/indexCity.vue')
       },
+      {
+        path: '/heatmap',
+        name: 'heatmap',
+        component: () => import( '../views/wisdomCity/heatmap.vue')
+      },
     ]
   }
 ]
