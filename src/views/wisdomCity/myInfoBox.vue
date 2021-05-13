@@ -50,11 +50,20 @@
           }),
         });
         viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
+
+        viewer.scene.camera.flyTo({
+          destination: new Cesium.Cartesian3(-2852038.506894064, 4656753.071879653, 3286786.358214652),
+          orientation: {
+            heading: 0.4417702951554947,
+            pitch: -0.30187320702800813,
+          },
+        });
         
         this.initHandleEvent()
        
       },
       initHandleEvent(){
+        /* 鼠标左击事件 */
         handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);　　//定义事件
         handler.setInputAction((movement)=> {
             //1.椭球面坐标:获取当前点击视线与椭球面相交处的坐标，在加载地形的场景上获取的坐标有误差
@@ -86,22 +95,35 @@
            
 
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
-
+        
+        /* 场景渲染完成后事件 */
         viewer.scene.postRender.addEventListener((e)=> {
 
             this.ponitArr.forEach((element,index)=>{
                 var winpos = viewer.scene.cartesianToCanvasCoordinates(element.entity._position._value);
-                    this.$refs.infoBox[index].style.left = winpos.x + 20 + "px";
-                    this.$refs.infoBox[index].style.top = winpos.y - 50 + "px";
+                    this.$refs.infoBox[index].style.left = winpos.x - 200 + "px";
+                    this.$refs.infoBox[index].style.top = winpos.y - 80 + "px";
             })
-
-            // if(this.currentPoint){
-            //         var winpos = viewer.scene.cartesianToCanvasCoordinates(this.currentPoint._position._value);
-            //         this.$refs.infoBox.style.left = winpos.x + 20 + "px";
-            //         this.$refs.infoBox.style.top = winpos.y - 50 + "px";
-            // }
             
             });
+
+            /* 监听相机缩放事件 */
+         viewer.scene.camera.moveEnd.addEventListener(()=>{
+                 //获取当前相机高度
+                  var currentMagnitude = viewer.camera.getMagnitude();
+                 
+                  if(currentMagnitude > 11384975){
+                    this.ponitArr.forEach((element,index)=>{
+                      element.show = false
+                      })
+                  }else{
+                    this.ponitArr.forEach((element,index)=>{
+                      element.show = true
+                      })
+                  }
+
+
+        })
       },
       drawPoint(point) {
             var entity = viewer.entities.add({
