@@ -55,10 +55,6 @@
     methods: {
       init() {
         let that = this
-        var geeMetadata = new GoogleEarthEnterpriseMetadata('http://www.earthenterprise.org/3d');
-var gee = new Cesium.GoogleEarthEnterpriseTerrainProvider({
-    metadata : geeMetadata
-});
         /* 
            初始化
          */
@@ -74,10 +70,15 @@ var gee = new Cesium.GoogleEarthEnterpriseTerrainProvider({
           baseLayerPicker: false, // 底图切换控件
           animation: false, // 控制场景动画的播放速度控件
           // terrainProvider: gee,
-          imageryProvider:new Cesium.BingMapsImageryProvider({
-             url : 'https://dev.virtualearth.net',
-             key : 'AtQ0QJxTOCYmAUOKC8g3v-nZAAcxLy_2c6fiJDFDFW-mdIS1iOIhfwSqs1G_I7IV'
-          })
+          terrainProvider:new Cesium.CesiumTerrainProvider({
+        url:'http://localhost:9000/terrain/d6e253c0b15711eba5e9b37ec64a32ed',   
+    		// url:'https://lab.earthsdk.com/terrain/42752d50ac1f11e99dbd8fd044883638'//CesiumLab提供的世界12级地形
+    		// url:'https://lab.earthsdk.com/terrain/577fd5b0ac1f11e99dbd8fd044883638'//CesiumLab提供的中国14级地形
+    	}),
+          // imageryProvider:new Cesium.BingMapsImageryProvider({
+          //    url : 'https://dev.virtualearth.net',
+          //    key : 'AtQ0QJxTOCYmAUOKC8g3v-nZAAcxLy_2c6fiJDFDFW-mdIS1iOIhfwSqs1G_I7IV'
+          // })
         };
 
         //使用ion数据   需要先申请token
@@ -111,7 +112,7 @@ var gee = new Cesium.GoogleEarthEnterpriseTerrainProvider({
 
         // 加载3dtiles模型
         that.load3DTileModel() 
-        that.scanLine()
+        // that.scanLine()
         //添加鼠标左击事件 
         that.addLeftClickEvent()
         //添加鼠标左击事件 

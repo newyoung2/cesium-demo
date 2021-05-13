@@ -211,6 +211,11 @@ const routes = [
         name: 'heatmap',
         component: () => import( '../views/wisdomCity/heatmap.vue')
       },
+      {
+        path: '/myInfoBox',
+        name: 'myInfoBox',
+        component: () => import( '../views/wisdomCity/myInfoBox.vue')
+      },
     ]
   }
 ]
