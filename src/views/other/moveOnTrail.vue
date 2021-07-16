@@ -102,18 +102,18 @@ export default {
       });
 
       /* 把位置数据进行插值计算   让模型绕多边形轨迹移动 */
-      entity.position.setInterpolationOptions({
-        interpolationDegree: 1,
-        interpolationAlgorithm: Cesium.LinearApproximation,
-      });
+      // entity.position.setInterpolationOptions({
+      //   interpolationDegree: 1,
+      //   interpolationAlgorithm: Cesium.LinearApproximation,
+      // });
 
       /* 绕圆形轨迹飞行 */
-      //    entity.position.setInterpolationOptions({
-      //       interpolationDegree: 5,
-      //       interpolationAlgorithm:
-      //         Cesium.LagrangePolynomialApproximation,
-      //     });
-       
+         entity.position.setInterpolationOptions({
+            interpolationDegree: 5,
+            interpolationAlgorithm:
+              Cesium.LagrangePolynomialApproximation,
+          });
+       con
       
 
       /* 垂直向下看视角 */

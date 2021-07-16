@@ -1,6 +1,10 @@
 const menu = [
   {
     title: "【实战与应用】", children: [  
+      { name: '智慧城市', value: 'indexCity'},
+      { name: '三维空间量算', value: '3dDrawLine'},
+      { name: '计算不规则区域面积', value: 'measureArea'}, 
+      { name: '单体化', value: 'monomer'}, 
       { name: '自定义气泡框', value: 'myInfoBox'},  
       { name: '测量空间直线距离', value: 'mls' },
       { name: '测量空间面积', value: 'mas' },   
@@ -16,7 +20,7 @@ const menu = [
       { name: '城市3d模型（基于three.js）', value: 'threeCityModel'},
       { name: '浮动盒子', value: 'floatBox'},
       { name: '热力图', value: 'heatmap'},
-      { name: '智慧城市', value: 'indexCity'},
+      
       ]
   },
   {title: "【专题学习】Viewer",children: []},
@@ -46,7 +50,9 @@ const menu = [
   },
   {title: "【专题学习】Entity矢量数据",children: []},
   {title: "【专题学习】primitive矢量数据",children: []},
-  {title: "【专题学习】property机制",children: []},
+  {title: "【专题学习】property机制",children: [
+    { name: '添加bloom后期效果', value: 'bloom' },
+  ]},
   {title: "【专题学习】材质",children: []},
   {title: "【专题学习】gltf小模型",children: []},
   {
@@ -57,7 +63,10 @@ const menu = [
       { name: '纽约城市模型', value: 'NewYorkModel' }
     ],
   },
-  {title: "【专题学习】czml数据格式",children: []},
+  {title: "【专题学习】czml数据格式",
+   children: [
+    { name: '自定义属性', value: 'czmlCustomProperty' },
+  ]},
   {
     title: "【专题学习】particle system(粒子系统相关)",
     children: [{ name: '飞机螺旋桨着火', value: 'firePlane' },
