@@ -28,7 +28,7 @@
           v-model="activeName"
         >
           <el-collapse-item
-            :title="item.title"
+            :title="`${item.title}-----------(${item.children.length})`"
             :name="item.title"
             v-for="(item,index) in menulistFilter"
             :key="index"

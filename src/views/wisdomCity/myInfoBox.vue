@@ -32,6 +32,7 @@
       this.init();
     },
     methods: {
+      //初始化
       init() {
         viewer = new Cesium.Viewer("cesiumContainer1", {
           infoBox: false,
@@ -62,6 +63,7 @@
         this.initHandleEvent()
        
       },
+      //注册交互事件
       initHandleEvent(){
         /* 鼠标左击事件 */
         handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);　　//定义事件
@@ -96,9 +98,10 @@
 
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
         
-        /* 场景渲染完成后事件 */
+        /* 场景渲染完成后事件   */
         viewer.scene.postRender.addEventListener((e)=> {
-
+            
+          //实时获取点对象世界坐标  转换为屏幕坐标 确保地球旋转移动时候气泡框跟着地球移动而移动
             this.ponitArr.forEach((element,index)=>{
                 var winpos = viewer.scene.cartesianToCanvasCoordinates(element.entity._position._value);
                     this.$refs.infoBox[index].style.left = winpos.x - 200 + "px";
@@ -112,6 +115,7 @@
                  //获取当前相机高度
                   var currentMagnitude = viewer.camera.getMagnitude();
                  
+                  //当达相机高度在某个范围内   显示气泡框   超出该高度隐藏气泡框
                   if(currentMagnitude > 11384975){
                     this.ponitArr.forEach((element,index)=>{
                       element.show = false
@@ -125,6 +129,7 @@
 
         })
       },
+      //绘制点实体
       drawPoint(point) {
             var entity = viewer.entities.add({
                 position: point,

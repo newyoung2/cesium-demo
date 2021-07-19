@@ -97,6 +97,11 @@ const routes = [
         component: () => import( '../views/other/drawArea.vue')
       },
       {
+        path: '/3dDrawLine',
+        name: '3dDrawLine',
+        component: () => import( '../views/other/3dDrawLine.vue')
+      },
+      {
         path: '/topoJson',
         name: 'topoJson',
         component: () => import( '../views/other/topoJson.vue')
@@ -215,6 +220,26 @@ const routes = [
         path: '/myInfoBox',
         name: 'myInfoBox',
         component: () => import( '../views/wisdomCity/myInfoBox.vue')
+      },
+      {
+        path: '/measureArea',
+        name: 'measureArea',
+        component: () => import( '../views/wisdomCity/measureArea.vue')
+      },
+      {
+        path: '/monomer',
+        name: 'monomer',
+        component: () => import( '../views/wisdomCity/monomer.vue')
+      },
+      {
+        path: '/czmlCustomProperty',
+        name: 'czmlCustomProperty',
+        component: () => import( '../views/czml/czmlCustomProperty.vue')
+      },
+      {
+        path: '/calbackproperty',
+        name: 'calbackproperty',
+        component: () => import( '../views/property/calbackproperty.vue')
       },
     ]
   }
