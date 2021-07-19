@@ -7,7 +7,6 @@
     "build": "vue-cli-service build"
   },
   "dependencies": {
-    "@turf/turf": "^5.1.6",
     "@types/cesium": "^1.67.13",
     "axios": "^0.21.0",
     "cesium": "^1.75.0",

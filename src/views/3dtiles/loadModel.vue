@@ -2,7 +2,7 @@
   <div id="cesiumContainer">
     <el-button type="primary" size="mini" @click.stop="reset" style="position:absolute;right:32vh;top:2vh;z-index:100;">
       重置</el-button>
-    <el-button type="primary" size="mini" @click.stop="startDraw"
+    <el-button type="primary" size="mini" @click.stop="isDrawPoint = true"
       style="position:absolute;right:20vh;top:2vh;z-index:100;">画点</el-button>
     <el-button type="primary" size="mini" @click.stop="save" style="position:absolute;right:8vh;top:2vh;z-index:100;">保存
     </el-button>
@@ -11,11 +11,9 @@
 
 <script>
   import * as Cesium from "cesium/Cesium";
-  import * as turf from '@turf/turf'
   import widget from "cesium/Widgets/widgets.css";
   // import util from '../../util/cesiumUtil'
   var viewer = null;
-  let scene
   var tileset = null;
   var handler = null
   let res
@@ -34,8 +32,6 @@
       return {
         tileset: null,
         pointArr: [],
-        degreeArr:[],
-        degreeHeight:[],
         isDrawPoint: false,
         geojson: [],
         // [[106.70693454431124, 26.56350489256199,
@@ -74,35 +70,39 @@
           baseLayerPicker: false, // 底图切换控件
           animation: false, // 控制场景动画的播放速度控件
           // terrainProvider: gee,
-          terrainProvider: new Cesium.CesiumTerrainProvider({
-            url: Cesium.IonResource.fromAssetId(3956),
-          }),
+          terrainProvider:new Cesium.CesiumTerrainProvider({
+        url:'http://localhost:9000/terrain/d6e253c0b15711eba5e9b37ec64a32ed',   
+    		// url:'https://lab.earthsdk.com/terrain/42752d50ac1f11e99dbd8fd044883638'//CesiumLab提供的世界12级地形
+    		// url:'https://lab.earthsdk.com/terrain/577fd5b0ac1f11e99dbd8fd044883638'//CesiumLab提供的中国14级地形
+    	}),
+          // imageryProvider:new Cesium.BingMapsImageryProvider({
+          //    url : 'https://dev.virtualearth.net',
+          //    key : 'AtQ0QJxTOCYmAUOKC8g3v-nZAAcxLy_2c6fiJDFDFW-mdIS1iOIhfwSqs1G_I7IV'
+          // })
         };
 
         //使用ion数据   需要先申请token
         // Cesium.Ion.defaultAccessToken =
         //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZjFjYmZmNS1hYmNjLTRhZWUtYjlkNi02ODVmOGRjNGQ2N2MiLCJpZCI6Mzg4MzUsImlhdCI6MTYwNjg3Mzk0MX0.R0iO5eELEnpRqQCzoa33UZakcsTYUidaTP9nLa342wY";
-
-        viewer = new Cesium.Viewer("cesiumContainer", viewerOption);
+        
+          viewer = new Cesium.Viewer("cesiumContainer", viewerOption);
         viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
-        viewer.scene.globe.depthTestAgainstTerrain = true;
-        scene = viewer.scene
 
-        //       let item = viewer.entities.add({
-        //      name: 'PolylineTrail',
-        //       polygon: {
-        //           hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights([
-        //               50, 30, 250000,
-        //               60 , 30, 250000,
-        //               60 , 32, 250000,
-        //               50, 32, 250000,
-        //           ]),
-        //           width: 15,
-        //           material: new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.WHITE, 3000,1)
-        //       }
-        //  });
+//       let item = viewer.entities.add({
+//      name: 'PolylineTrail',
+//       polygon: {
+//           hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights([
+//               50, 30, 250000,
+//               60 , 30, 250000,
+//               60 , 32, 250000,
+//               50, 32, 250000,
+//           ]),
+//           width: 15,
+//           material: new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.WHITE, 3000,1)
+//       }
+//  });
 
-        //  viewer.zoomTo(item);
+//  viewer.zoomTo(item);
 
         // 添加primitive
         // ldCollection = new Cesium.PrimitiveCollection();
@@ -111,27 +111,16 @@
         // }
 
         // 加载3dtiles模型
-        that.load3DTileModel()
+        that.load3DTileModel() 
         // that.scanLine()
         //添加鼠标左击事件 
         that.addLeftClickEvent()
         //添加鼠标左击事件 
         // that.addRightClickEvent()
-
-      },
-      startDraw(){
-        this.isDrawPoint = true
-        viewer.scene.screenSpaceCameraController.enableRotate = false //禁止相机旋转
-        viewer.scene.screenSpaceCameraController.enableTranslate = false;  //禁止地图平移
-        // viewer.screenSpaceCameraController.enableZoom = false;  //禁止地图缩放
-        viewer.scene.screenSpaceCameraController.enableTilt = false;  //禁止相机倾斜
+       
       },
       // 加载3dtiles模型
-      load3DTileModel() {
-        let resource = new Cesium.Resource({
-          url: "test/Scene/Production_6.json"
-        })
-        console.log(resource)
+      load3DTileModel(){
         tileset = new Cesium.Cesium3DTileset({
           url: "test/Scene/Production_6.json",
           maximumScreenSpaceError: 4,
@@ -152,7 +141,7 @@
       },
       // 加载楼栋Primitive
       addLdPrimitive() {
-        // ldCollection.removeAll();
+        ldCollection.removeAll();
         // 
         this.geojson.forEach(e => {
           ldCollection.add(new Cesium.ClassificationPrimitive({
@@ -162,7 +151,7 @@
                   Cesium.Cartesian3.fromDegreesArray(e.arr)
                 ),
                 extrudedHeight: 100,//e.height
-                height: -100,
+                height:-100,
                 //vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
               }),
               attributes: {//顶点着色器属性
@@ -177,138 +166,42 @@
 
         viewer.scene.primitives.add(ldCollection);
       },
-      addLeftClickEvent() {
+      addLeftClickEvent(){
         let that = this
         handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-
+       
         handler.setInputAction(function (movement) {
           var cartesian = viewer.scene.pickPosition(movement.position);
-          /* 将笛卡尔坐标转换为经纬度坐标 */
-          let cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-          let longitude = Cesium.Math.toDegrees(cartographic.longitude);
-          let latitude = Cesium.Math.toDegrees(cartographic.latitude);
-          let height = cartographic.height;
-          // console.log(longitude, latitude, height)
-          if (that.isDrawPoint) {
-            that.drawPoint(cartesian,[longitude,latitude],height)
-          }
-
-          // that.cameraFly(movement)
-
+            /* 将笛卡尔坐标转换为经纬度坐标 */
+            let cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+            let longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            let latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            let height = cartographic.height;
+              console.log(longitude,latitude,height)
+            
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-
-        handler.setInputAction(function (movement) {
-          var cartesian = viewer.scene.pickPosition(movement.position);
-          /* 将笛卡尔坐标转换为经纬度坐标 */
-          let cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-          let longitude = Cesium.Math.toDegrees(cartographic.longitude);
-          let latitude = Cesium.Math.toDegrees(cartographic.latitude);
-          let height = cartographic.height;
-          // console.log(longitude, latitude, height)
-
-          // that.cameraFly(movement)
-          if (that.isDrawPoint) {
-            that.drawPolygon(cartesian)
-          }
-
-        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
       },
-      // 漫游飞行到点击处
-      cameraFly(movement) {
+      scanLine(){
+        var cartesian1 = Cesium.Cartesian3.fromDegrees(106.70707216579464,26.56379390155953);
+        var cartesian2 = Cesium.Cartesian3.fromDegrees(106.7079252734644,26.562935758126347);
 
-        var cartesian = viewer.scene.pickPosition(movement.position);
-        let cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-        let lon = Cesium.Math.toDegrees(cartographic.longitude);
-        let lat = Cesium.Math.toDegrees(cartographic.latitude);
-        let hei = cartographic.height;
-
-        var longitude = Cesium.Math.toRadians(
-          lon
-        );
-        var latitude = Cesium.Math.toRadians(lat);
-        var height = hei
-
-        var positionCartographic = new Cesium.Cartographic(
-          longitude,
-          latitude,
-          height * 0.5
-        );
-        var position = scene.globe.ellipsoid.cartographicToCartesian(
-          positionCartographic
-        );
-
-        var camera = scene.camera;
-        var heading = camera.heading;
-        var pitch = camera.pitch;
-
-        var offset = this.offsetFromHeadingPitchRange(
-          heading,
-          pitch,
-          height * 16.0
-        );
-
-        var transform = Cesium.Transforms.eastNorthUpToFixedFrame(position);
-        Cesium.Matrix4.multiplyByPoint(transform, offset, position);
-
-        camera.flyTo({
-          destination: position,
-          orientation: {
-            heading: heading,
-            pitch: pitch,
-          },
-          easingFunction: Cesium.EasingFunction.QUADRATIC_OUT,
-        });
-      },
-      offsetFromHeadingPitchRange(heading, pitch, range) {
-        pitch = Cesium.Math.clamp(
-          pitch,
-          -Cesium.Math.PI_OVER_TWO,
-          Cesium.Math.PI_OVER_TWO
-        );
-        heading = Cesium.Math.zeroToTwoPi(heading) - Cesium.Math.PI_OVER_TWO;
-
-        var pitchQuat = Cesium.Quaternion.fromAxisAngle(
-          Cesium.Cartesian3.UNIT_Y,
-          -pitch
-        );
-        var headingQuat = Cesium.Quaternion.fromAxisAngle(
-          Cesium.Cartesian3.UNIT_Z,
-          -heading
-        );
-        var rotQuat = Cesium.Quaternion.multiply(
-          headingQuat,
-          pitchQuat,
-          headingQuat
-        );
-        var rotMatrix = Cesium.Matrix3.fromQuaternion(rotQuat);
-
-        var offset = Cesium.Cartesian3.clone(Cesium.Cartesian3.UNIT_X);
-        Cesium.Matrix3.multiplyByVector(rotMatrix, offset, offset);
-        Cesium.Cartesian3.negate(offset, offset);
-        Cesium.Cartesian3.multiplyByScalar(offset, range, offset);
-        return offset;
-      },
-      scanLine() {
-        var cartesian1 = Cesium.Cartesian3.fromDegrees(106.70707216579464, 26.56379390155953);
-        var cartesian2 = Cesium.Cartesian3.fromDegrees(106.7079252734644, 26.562935758126347);
-
-        var count = 300;
-        var cartesians = new Array(count);
-        for (var i = 0; i < count; ++i) {
-          var offset = i / (count - 1);
-          cartesians[i] = Cesium.Cartesian3.lerp(
-            cartesian1,
-            cartesian2,
-            offset,
-            new Cesium.Cartesian3()
-          );
-        }
-        // console.log(cartesians)
-        let position = [106.70687752201412, 26.563720844320446,
-          106.70705799645077, 26.563905853809782,
-          106.70788118373893, 26.562992300929444,
-          106.70771926639411, 26.562893255731105]
-
+  var count = 300;
+  var cartesians = new Array(count);
+  for (var i = 0; i < count; ++i) {
+    var offset = i / (count - 1);
+    cartesians[i] = Cesium.Cartesian3.lerp(
+      cartesian1,
+      cartesian2,
+      offset,
+      new Cesium.Cartesian3()
+    );
+  }
+  // console.log(cartesians)
+        let position = [106.70687752201412,26.563720844320446,
+        106.70705799645077,26.563905853809782,
+        106.70788118373893,26.562992300929444,
+        106.70771926639411,26.562893255731105]
+        
         // viewer.scene.primitives.add(new Cesium.ClassificationPrimitive({
         //         geometryInstances: new Cesium.GeometryInstance({
         //             geometry: new Cesium.PolygonGeometry({
@@ -330,95 +223,46 @@
 
         //     }))
 
-        var primitive = new Cesium.GroundPrimitive({
-          geometryInstances: new Cesium.GeometryInstance({
-            geometry: new Cesium.PolygonGeometry({
-              polygonHierarchy: new Cesium.PolygonHierarchy(
-                Cesium.Cartesian3.fromDegreesArray(position)
-              ),
-              extrudedHeight: 10000,//e.height
-              height: -100,
-              //vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
-            })
-          }),
-          appearance: new Cesium.EllipsoidSurfaceAppearance({
-            aboveGround: true
-          }),
-          classificationType: Cesium.ClassificationType.BOTH,	// 支持类型： 地形、3DTile、或者在地面上
-          show: true
+            var primitive = new Cesium.GroundPrimitive({
+            geometryInstances: new Cesium.GeometryInstance({
+                geometry: new Cesium.PolygonGeometry({
+                        polygonHierarchy: new Cesium.PolygonHierarchy(
+                          Cesium.Cartesian3.fromDegreesArray(position)
+                        ),
+                        extrudedHeight: 10000,//e.height
+                        height: -100,
+                        //vertexFormat: Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT
+                    })
+            }),
+            appearance: new Cesium.EllipsoidSurfaceAppearance({
+                aboveGround: true
+            }),
+            classificationType : Cesium.ClassificationType.BOTH,	// 支持类型： 地形、3DTile、或者在地面上
+            show: true
         });
         viewer.scene.primitives.add(primitive)
 
         console.log(viewer.scene.primitives)
       },
       // 画点
-      drawPoint(cartesian,degree,height) {
-        this.degreeArr.push(degree)
-        this.degreeHeight = height
-        this.pointArr.push(cartesian)
-        let point = viewer.entities.add({
+      drawPoint(cartographic, cartesian) {
+        this.pointArr.push(cartographic)
+        console.log(cartesian)
+        viewer.entities.add({
+          name: 'hahaha',
           position: cartesian,
           point: {
-            pixelSize: 10,
-            color: Cesium.Color.BLUE,
-            outlineWidth: 2,
+            pixelSize: 5,
+            color: Cesium.Color.RED,
             outlineColor: Cesium.Color.WHITE,
+            outlineWidth: 2
           }
         });
-
-        return point
-      },
-      drawPolygon(points) {
-        console.log(this.degreeArr)
-        var line = turf.lineString(this.degreeArr);
-     
-        var curved = turf.bezierSpline(line,{sharpness:2});
-        console.log(curved)
-          var positions = [];
-          curved.geometry.coordinates.map(e=>{
-            positions.push(e[0])
-            positions.push(e[1])
-            positions.push(this.degreeHeight)
-          })
-          
-          let areaArr = JSON.parse(JSON.stringify(this.degreeArr))
-          areaArr.push(areaArr[0])  //最后一个点和第一个点必须一样形成闭合区域才能计算面积
-          var polygon = turf.polygon([areaArr]);
-          var area = turf.area(polygon);
-          console.log('面积',area)
-
-          let areaArr1 = JSON.parse(JSON.stringify(curved.geometry.coordinates))
-          areaArr1.push(areaArr[0])  //最后一个点和第一个点必须一样形成闭合区域才能计算面积
-          var polygon1 = turf.polygon([areaArr1]);
-          var area1 = turf.area(polygon1);
-          console.log('面积1',area1)
-        
-
-        let gon = viewer.entities.add({
-          position: this.pointArr[0],
-          polygon: {
-            hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights(positions),
-            material: Cesium.Color.MEDIUMAQUAMARINE.withAlpha(0.5),
-            perPositionHeight: true,
-          },
-          polyline: {
-            positions: Cesium.Cartesian3.fromDegreesArrayHeights(positions),
-            width: 2.5,
-            show: true,
-            material: new Cesium.PolylineOutlineMaterialProperty({
-              color: Cesium.Color.TOMATO.withAlpha(0.8),
-              outlineWidth: 1,
-              outlineColor: Cesium.Color.TOMATO.withAlpha(0.8),
-            }),
-          },
-        });
-
-        return gon
       },
       save() {
         this.isDrawPoint = false
         let arr = []
-        this.pointArr.forEach(e => {
+        this.pointArr.forEach(e=>{
           arr.push(e.longitude)
           arr.push(e.latitude)
         })
@@ -433,24 +277,19 @@
         this.geojson.push(param)
         // localStorage.setItem('geojson', JSON.stringify(this.geojson))
         this.pointArr = []
-        // viewer.entities.removeAll();
-
+        viewer.entities.removeAll();
+        
         console.log(this.geojson)
-
+        
         this.addLdPrimitive()
       },
       reset() {
-        viewer.entities.removeAll()
+        
+        viewer.entities.removeAll();
         this.pointArr = []
-        this.degreeArr = []
-        this.degreeHeight = ''
         this.geojson = []
-        // this.addLdPrimitive()
+        this.addLdPrimitive()
         this.isDrawPoint = false
-        viewer.scene.screenSpaceCameraController.enableRotate = true //禁止相机旋转
-        viewer.scene.screenSpaceCameraController.enableTranslate = true;  //禁止地图平移
-        // viewer.screenSpaceCameraController.enableZoom = false;  //禁止地图缩放
-        viewer.scene.screenSpaceCameraController.enableTilt = true;  //禁止相机倾斜
         // localStorage.removeItem('geojson')
       },
       //绘制栋标签
