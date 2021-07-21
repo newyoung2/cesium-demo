@@ -169,10 +169,10 @@ export default {
         // tooltip.style.top = movement.endPosition.y - 25 + "px";
     // tooltip.innerHTML ='<p>单击开始，右击结束</p>';
         // cartesian = viewer.scene.pickPosition(movement.endPosition); 
-      let ray = viewer.camera.getPickRay(movement.endPosition);
-      cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+      // let ray = viewer.camera.getPickRay(movement.endPosition);
+      // cartesian = viewer.scene.globe.pick(ray, viewer.scene);
      
-        //cartesian = viewer.scene.camera.pickEllipsoid(movement.endPosition, viewer.scene.globe.ellipsoid);
+        cartesian = viewer.scene.camera.pickEllipsoid(movement.endPosition, viewer.scene.globe.ellipsoid);
         if(positions.length >= 2){
             
             if (!Cesium.defined(polygon)) {
@@ -194,8 +194,8 @@ export default {
       // let ray = viewer.camera.getPickRay(movement.position);
       // cartesian = viewer.scene.globe.pick(ray, viewer.scene);
 
-      cartesian = viewer.scene.pickPosition(movement.position)
-        // cartesian = viewer.scene.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid);
+      // cartesian = viewer.scene.pickPosition(movement.position)
+        cartesian = viewer.scene.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid);
         if(positions.length == 0) {
             positions.push(cartesian.clone());
         }

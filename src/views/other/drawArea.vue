@@ -39,6 +39,7 @@ export default {
       });
 
       viewer._cesiumWidget._creditContainer.style.display = "none"; // 隐藏版权
+      viewer.scene.globe.depthTestAgainstTerrain = true;
       this.startDraw();
     },
 
@@ -46,7 +47,9 @@ export default {
       let that = this;
       handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
       handler.setInputAction(function (event) {
+        // var earthPosition = viewer.camera.pickEllipsoid(event.position,viewer.scene.globe.ellipsoid);
         var earthPosition = viewer.scene.pickPosition(event.position);
+        console.log(earthPosition)
         if (Cesium.defined(earthPosition)) {
           if (activePoint.length == 0) {
             floatingPoint = that.createPoint(earthPosition);
@@ -90,7 +93,7 @@ export default {
         point: {
           color: Cesium.Color.WHITE,
           pixelSize: 5,
-          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+          // heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
         },
       });
       return point;
