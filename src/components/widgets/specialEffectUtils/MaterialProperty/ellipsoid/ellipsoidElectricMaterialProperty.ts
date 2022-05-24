@@ -10,9 +10,10 @@ import * as Cesium from 'cesium'
 class EllipsoidElectricMaterialProperty {
     constructor(options) {
         this._definitionChanged = new Cesium.Event();
+
         this._color = undefined;
         this._speed = undefined;
-        this.color = options?.color || new Cesium.Color(1.0, 1.0, 0.0, 1.0) ;
+        this.color = Cesium.Color.fromCssColorString(options.color) || new Cesium.Color(1.0, 1.0, 0.0, 1.0) ;
         this.speed = options?.speed || 10;
     }
 

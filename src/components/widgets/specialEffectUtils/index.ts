@@ -1,3 +1,4 @@
+import HexagonSpreadMaterialProperty from '../specialEffectUtils/MaterialProperty/circle/HexagonSpreadMaterialProperty'
 /* 一些动态效果的封装类 */
 class specialEffectUtils{
     
@@ -42,13 +43,13 @@ class specialEffectUtils{
             return defaultOption.radius;
         }, false)
 
-        ellipse.material = 
-        new Cesium.ImageMaterialProperty({
-            image: defaultOption.image,
-            color:Cesium.Color.fromCssColorString(defaultOption.color),/*  */
-            repeat: new Cesium.Cartesian2(1, 1),
-            transparent: true
-        })
+        ellipse.material = new HexagonSpreadMaterialProperty(defaultOption)
+        // new Cesium.ImageMaterialProperty({
+        //     image: defaultOption.image,
+        //     color:Cesium.Color.fromCssColorString(defaultOption.color),/*  */
+        //     repeat: new Cesium.Cartesian2(1, 1),
+        //     transparent: true
+        // })
 
     }
 

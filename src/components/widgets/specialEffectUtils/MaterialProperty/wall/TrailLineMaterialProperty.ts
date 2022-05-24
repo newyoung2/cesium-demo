@@ -1,13 +1,52 @@
 //流动墙材质
-function TrailLineMaterialProperty(options) {
-    // 默认参数设置
+import colors from '../../img/wenlu1.webp'
+import * as Cesium from 'cesium'
+class TrailLineMaterialProperty{
+    constructor(options?:any){
+        // 默认参数设置
     this._definitionChanged = new Cesium.Event();
     this._color = undefined;
     this._colorSubscription = undefined;
-    this.color = options.color;
-    this.duration = options.duration;
+    this.color = options?.color? Cesium.Color.fromCssColorString(options.color) : Cesium.Color.WHITE;
+    this.duration = options.duration || 18000;
     this._time = (new Date()).getTime();
+    }
+
+    get isConstant() {
+        return false;
+    }
+
+
+    get definitionChanged() {
+        return this._definitionChanged;
+    }
+
+
+    getType(time) {
+        return Cesium.Material.TrailLineType;
+    }
+
+    getValue(time, result) {
+        if (!Cesium.defined(result)) {
+            result = {};
+        }
+        result.color = Cesium.Property.getValueOrClonedDefault(this._color, time, Cesium.Color.WHITE, result.color);
+    
+        if (this.duration) {
+            result.time = (((new Date()).getTime() - this._time) % this.duration) / this.duration;
+        }
+        viewer.scene.requestRender();
+        return result;
+    }
+
+
+    equals(other) {
+        return this === other ||
+        (other instanceof TrailLineMaterialProperty &&
+            Cesium.Property.equals(this._color, other._color))
+    }
 }
+
 Object.defineProperties(TrailLineMaterialProperty.prototype, {
     isConstant: {
         get: function() {
@@ -21,29 +60,10 @@ Object.defineProperties(TrailLineMaterialProperty.prototype, {
     },
     color: Cesium.createPropertyDescriptor('color')
 });
-TrailLineMaterialProperty.prototype.getType = function(time) {
-    return 'TrailLine';
-};
-TrailLineMaterialProperty.prototype.getValue = function(time, result) {
-    if (!Cesium.defined(result)) {
-        result = {};
-    }
-    result.color = Cesium.Property.getValueOrClonedDefault(this._color, time, Cesium.Color.WHITE, result.color);
 
-    if (this.duration) {
-        result.time = (((new Date()).getTime() - this._time) % this.duration) / this.duration;
-    }
-    viewer.scene.requestRender();
-    return result;
-};
-TrailLineMaterialProperty.prototype.equals = function(other) {
-    return this === other ||
-        (other instanceof TrailLineMaterialProperty &&
-            Cesium.Property.equals(this._color, other._color))
-};
-Cesium.TrailLineMaterialProperty = TrailLineMaterialProperty;
+// Cesium.TrailLineMaterialProperty = TrailLineMaterialProperty;
 Cesium.Material.TrailLineType = 'TrailLine';
-Cesium.Material.TrailLineImage = "./src/material/trailLine/arrow.png";
+Cesium.Material.TrailLineImage = colors;
 Cesium.Material.TrailLineSource = "czm_material czm_getMaterial(czm_materialInput materialInput)\n\
 {\n\
      czm_material material = czm_getDefaultMaterial(materialInput);\n\
@@ -67,3 +87,5 @@ Cesium.Material._materialCache.addMaterial(Cesium.Material.TrailLineType, {
         return true;
     }
 });
+
+export default TrailLineMaterialProperty

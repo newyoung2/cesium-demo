@@ -5,16 +5,60 @@
 
 
 //动态墙材质
-function DynamicWallMaterialProperty(options) {
-    // 默认参数设置
-    this._definitionChanged = new Cesium.Event();
-    this._color = undefined;
-    this._colorSubscription = undefined;
-    this.color = options.color;
-    this.duration = options.duration;
-    this.trailImage = options.trailImage;
-    this._time = (new Date()).getTime();
+import * as Cesium from 'cesium'
+import colors from '../../img/spriteline1.png'
+class DynamicWallMaterialProperty{
+     constructor(options?:any){
+        this._definitionChanged = new Cesium.Event();
+        this._color = undefined;
+        this._colorSubscription = undefined;
+        this.color = options?.color? Cesium.Color.fromCssColorString(options.color) : Cesium.Color.RED;
+        this.duration = options?.duration || 18000;
+        this.trailImage = options?.trailImage || colors;
+        this._time = (new Date()).getTime();
+     }
+
+     get isConstant() {
+        return false;
+    }
+
+
+    get definitionChanged() {
+        return this._definitionChanged;
+    }
+
+
+    getType(time) {
+        return Cesium.Material.DynamicWallType;
+    }
+
+
+    getValue(time, result) {
+        if (!Cesium.defined(result)) {
+            result = {};
+        }
+        result.color = Cesium.Property.getValueOrClonedDefault(this._color, time, Cesium.Color.WHITE, result.color);
+        if (this.trailImage) {
+            result.image = this.trailImage;
+        } else {
+            result.image = Cesium.Material.DynamicWallImage
+        }
+    
+        if (this.duration) {
+            result.time = (((new Date()).getTime() - this._time) % this.duration) / this.duration;
+        }
+        viewer.scene.requestRender();
+        return result;
+    }
+
+
+    equals(other) {
+        return this === other ||
+        (other instanceof DynamicWallMaterialProperty &&
+            Cesium.Property.equals(this._color, other._color))
+    }
 }
+
 Object.defineProperties(DynamicWallMaterialProperty.prototype, {
     isConstant: {
         get: function() {
@@ -28,34 +72,8 @@ Object.defineProperties(DynamicWallMaterialProperty.prototype, {
     },
     color: Cesium.createPropertyDescriptor('color')
 });
-DynamicWallMaterialProperty.prototype.getType = function(time) {
-    return 'DynamicWall';
-};
-DynamicWallMaterialProperty.prototype.getValue = function(time, result) {
-    if (!Cesium.defined(result)) {
-        result = {};
-    }
-    result.color = Cesium.Property.getValueOrClonedDefault(this._color, time, Cesium.Color.WHITE, result.color);
-    if (this.trailImage) {
-        result.image = this.trailImage;
-    } else {
-        result.image = Cesium.Material.DynamicWallImage
-    }
-
-    if (this.duration) {
-        result.time = (((new Date()).getTime() - this._time) % this.duration) / this.duration;
-    }
-    viewer.scene.requestRender();
-    return result;
-};
-DynamicWallMaterialProperty.prototype.equals = function(other) {
-    return this === other ||
-        (other instanceof DynamicWallMaterialProperty &&
-            Cesium.Property.equals(this._color, other._color))
-};
-Cesium.DynamicWallMaterialProperty = DynamicWallMaterialProperty;
 Cesium.Material.DynamicWallType = 'DynamicWall';
-Cesium.Material.DynamicWallImage = "./colors.png";
+Cesium.Material.DynamicWallImage = colors;
 Cesium.Material.DynamicWallSource = "czm_material czm_getMaterial(czm_materialInput materialInput)\n\
                                             {\n\
                                             czm_material material = czm_getDefaultMaterial(materialInput);\n\
@@ -83,3 +101,5 @@ Cesium.Material._materialCache.addMaterial(Cesium.Material.DynamicWallType, {
         return true;
     }
 });
+
+export default DynamicWallMaterialProperty

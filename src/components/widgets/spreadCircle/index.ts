@@ -1,7 +1,6 @@
-import testImg from './img/标注光圈.png'
-import t1 from './img/test.png'
+import hexagon from './img/hexagon.png'
 import specialEffectUtils from '../specialEffectUtils'
-/* 扩散圆特效 */
+/* 扩散圆特效(基于图片) */
 /**
  * ps:绘制完后  图片和颜色渲染不同步待解决
  */
@@ -23,7 +22,7 @@ const mockData = [{
     },
     /* 单个配置-----优先级高于全局配置 */
     option:{
-        // image:t1,  //图片---如需不需要图片只显示颜色  把值设为null
+        image:hexagon,  //图片---如需不需要图片只显示颜色  把值设为null
         minRadius:5000, //最小半径
         maxRadius:50000, //最大半径
         step:800,  //步长  控制扩散速度  
@@ -90,7 +89,7 @@ class spreadCircle {
     viewer: any
     dataSource: any
     option:Ioption = {
-        image: testImg,
+        image: hexagon,
         minRadius:3000,
         maxRadius:30000,
         step:300,

@@ -4,13 +4,50 @@
  *  entity的材质使用MaterialProperty,而primitive使用的是material。
  *  @Data：2022-01-11
  */
+ import * as Cesium from 'cesium'
+ import spriteline1 from '../../img/spriteline1.png'
+class Spriteline1MaterialProperty{
+    constructor(options?:any){
+        this._definitionChanged = new Cesium.Event()
+        this.duration = options?.duration || 1000
+         this.image = options?.image ||spriteline1
+       this._time = performance.now()
+    }
 
- function Spriteline1MaterialProperty(duration, image) {
-    this._definitionChanged = new Cesium.Event()
-    this.duration = duration
-    this.image = image
-    this._time = performance.now()
+    get isConstant() {
+        return false;
+    }
+
+
+    get definitionChanged() {
+        return this._definitionChanged;
+    }
+
+
+    getType(time) {
+        return Cesium.Material.Spriteline1Type;
+    }
+
+    getValue(time, result) {
+        if (!Cesium.defined(result)) {
+            result = {}
+        }
+        result.image = this.image
+        result.time =
+            ((performance.now() - this._time) % this.duration) / this.duration
+        return result
+    }
+
+
+    equals(other) {
+        return (
+            this === e ||
+            (e instanceof Spriteline1MaterialProperty && this.duration === e.duration)
+        )
+    }
+
 }
+
 Object.defineProperties(Spriteline1MaterialProperty.prototype, {
     isConstant: {
         get: function() {
@@ -25,28 +62,8 @@ Object.defineProperties(Spriteline1MaterialProperty.prototype, {
     color: Cesium.createPropertyDescriptor('color'),
     duration: Cesium.createPropertyDescriptor('duration')
 })
-Spriteline1MaterialProperty.prototype.getType = function(time) {
-    return 'Spriteline1'
-}
-Spriteline1MaterialProperty.prototype.getValue = function(
-    time,
-    result
-) {
-    if (!Cesium.defined(result)) {
-        result = {}
-    }
-    result.image = this.image
-    result.time =
-        ((performance.now() - this._time) % this.duration) / this.duration
-    return result
-}
-Spriteline1MaterialProperty.prototype.equals = function(e) {
-    return (
-        this === e ||
-        (e instanceof Spriteline1MaterialProperty && this.duration === e.duration)
-    )
-}
-Cesium.Spriteline1MaterialProperty = Spriteline1MaterialProperty
+
+// Cesium.Spriteline1MaterialProperty = Spriteline1MaterialProperty
 Cesium.Material.Spriteline1Type = 'Spriteline1'
 Cesium.Material.Spriteline1Source = `
 czm_material czm_getMaterial(czm_materialInput materialInput)
@@ -76,3 +93,5 @@ Cesium.Material._materialCache.addMaterial(Cesium.Material.Spriteline1Type, {
         return true
     },
 })
+
+export default Spriteline1MaterialProperty

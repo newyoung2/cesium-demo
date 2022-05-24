@@ -12,7 +12,7 @@ class EllipsoidTrailMaterialProperty {
         this._definitionChanged = new Cesium.Event();
         this._color = undefined;
         this._speed = undefined;
-        this.color = options.color;
+        this.color = Cesium.Color.fromCssColorString(options.color);
         this.speed = options.speed;
     }
 

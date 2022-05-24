@@ -6,3 +6,6 @@ export { default as specialEffectRadar } from './specialEffectRadar'
 export { default as imageRadarScan } from './specialEffectRadar/imageRadarScan'
 export { default as flowLine } from './flowLine'
 export { default as specialEffectCircle } from './specialEffectCircle'
+export { default as specialEffectEllipsoid } from './specialEffectEllipsoid'
+export { default as specialEffectWall } from './specialEffectWall'
+
